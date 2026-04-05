@@ -354,3 +354,64 @@ The cross-model transfer works because:
 - The Qwen3-8B and Qwen3-14B share the same tokenizer and were trained on similar data
 - The instruction-following behavior is captured as a direction in logit space (the delta) that generalizes across model sizes
 - The base-to-instruct delta from 8B is meaningful even when applied to 14B's different logit landscape
+
+---
+
+## 6. IFEval Benchmark Validation (541 Prompts)
+
+To confirm the 5-prompt results are not cherry-picked, we ran the same first-token
+distributional analysis on all 541 IFEval instruction-following prompts.
+
+### Results
+
+- **Top-1 shifted**: 383/541 (70.8%) — the delta changed the 14B base's prediction
+- **Top-1 matches 8B instruct**: 464/541 (85.8%) — the recovered distribution agrees with the instruct model
+- **Mean JS($p_{\text{ft}}$, $p_{\text{rec}}$)**: 0.038 (median 0.002) — very close to the instruct distribution
+- **Mean JS($p_{\text{large}}$, $p_{\text{rec}}$)**: 0.534 — the delta dramatically reshapes the 14B distribution
+
+### Restricted metrics at scale
+
+| k | KL(ft\|\|rec) | ft top-1 match | top-5 overlap |
+|---|-------------|---------------|--------------|
+| 10 | **0.083** | **498/541 (92.1%)** | 0.94 |
+| 50 | 0.124 | 478/541 (88.4%) | 0.88 |
+| 200 | 0.150 | 471/541 (87.1%) | 0.86 |
+
+At k=10, the delta achieves 92.1% top-1 match with the instruct model across 541 diverse prompts. This confirms at scale that restriction regularizes the delta.
+
+### Category breakdown
+
+The delta transfers most strongly for language constraints (81%), case/length constraints (78-79%), and least strongly for combination tasks (58%) requiring multiple simultaneous constraints.
+
+---
+
+## 7. Full Generation Comparison
+
+Beyond first-token logits, we generate full multi-token responses by running all 3
+models simultaneously with KV caches, applying the delta at every generation step:
+
+1. Forward pass all 3 models on the same token
+2. Compute restricted delta over $S_t = \text{top-}k(s_{\text{large}})$
+3. Sample from $\text{softmax}(s_{\text{large}}[S_t] + \lambda \cdot \delta)$
+4. Feed the sampled token back to all 3 models
+
+Results show that delta-steered generation produces instruction-following text
+that closely matches the 8B instruct model's output style and content, while
+the 14B base alone produces raw text completion.
+
+---
+
+## 8. Conclusion
+
+GRAFT demonstrates that you can make a large base model follow instructions
+without fine-tuning it, by transferring the instruction-following delta from a
+smaller model pair:
+
+$$p_{\text{steered}} = \text{softmax}\bigl(s_{\text{large}} + \lambda \cdot (\log p_{\text{ft}}^{S_t} - \log p_{\text{base}}^{S_t})\bigr)$$
+
+Key findings:
+1. The formula is mathematically correct (Step 1: KL=0 in oracle mode)
+2. The delta carries meaningful instruction-following signal (Step 2: mean |$\delta$| ~ 24)
+3. The delta transfers across model sizes (Step 3: 5/5 shifted, 4/5 match ft)
+4. The transfer holds at scale (IFEval: 85.8% top-1 match on 541 prompts)
+5. Restriction to k=10 is both cheapest and most accurate (92.1% top-1 match)
