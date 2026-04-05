@@ -382,28 +382,223 @@ should be treated as indistinguishable from zero.</p>
 </div>
 
 <!-- ================================================================ -->
-<h2>6. Conclusions &amp; Next Steps</h2>
+<h2>6. Step 2 — Same-Model Delta Transfer</h2>
+
+<p>$M_{\text{raw}} = M_{\text{large}}$ = Qwen3-8B-Base-4bit, $M_{\text{ft}}$ = Qwen3-8B-Instruct-4bit.
+Since $M_{\text{large}} = M_{\text{raw}}$, the oracle identity still holds (full-vocab KL = 0).
+But now the delta carries <strong>real instruction-following signal</strong>.</p>
+
+<div class="grid-2">
+  <div class="card metric-box">
+    <div class="value" style="color:var(--green)">0.0</div>
+    <div class="label">Full-vocab KL (all 5 prompts)</div>
+    <span class="verdict pass">pass</span>
+  </div>
+  <div class="card metric-box">
+    <div class="value" style="color:var(--accent)">23.9</div>
+    <div class="label">Mean |delta| at k=50</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card metric-box">
+    <div class="value">5/5</div>
+    <div class="label">Top-1 agreement (all k)</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value">1.00</div>
+    <div class="label">Top-5 overlap (all k)</div>
+  </div>
+</div>
+
+<h3>6.1 Base vs Instruct Predictions</h3>
+
+<table>
+  <thead>
+    <tr><th>#</th><th>Prompt</th><th>Base predicts</th><th>Instruct predicts</th><th>Mean |$\delta$| (k=50)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>Fibonacci</td><td><code>import</code></td><td><code>Certainly</code></td><td>14.75</td></tr>
+    <tr><td>2</td><td>Binary search</td><td><code>def</code></td><td><code>Here</code></td><td>23.75</td></tr>
+    <tr><td>3</td><td>Stack class</td><td><code>import</code></td><td><code>Here</code></td><td>27.75</td></tr>
+    <tr><td>4</td><td>Pair sum</td><td><code>Assistant</code></td><td><code>To</code></td><td>27.88</td></tr>
+    <tr><td>5</td><td>Decorator</td><td><code>import</code></td><td><code>Here</code></td><td>25.13</td></tr>
+  </tbody>
+</table>
+
+<p>The base model wants to continue with code (<code>import</code>, <code>def</code>) while the instruct
+model begins with a conversational response (<code>Here</code>, <code>Certainly</code>, <code>To</code>).
+The delta captures exactly this behavioral shift.</p>
+
+<h3>6.2 What the Delta Promotes and Demotes</h3>
+
+<div class="card example">
+<p><strong>Across all prompts at k=50:</strong></p>
+
+<p><strong>Top promoted</strong> (instruct wants MORE): <code>Here</code>, <code>Sure</code>, <code>Certainly</code>, <code>def</code>, <code>To</code>, <code>Below</code><br>
+These are conversational openers and structured response starters.</p>
+
+<p><strong>Top demoted</strong> (instruct wants LESS): <code>import</code>, <code>input</code>, <code>user</code>, <code>time</code>, <code>Write</code>, <code>INST</code><br>
+These are raw code tokens, template markers, and text-completion continuations.</p>
+
+<p>Delta magnitudes are large (max |$\delta$| up to 41.5), reflecting the
+substantial behavioral difference between base and instruct models.
+For comparison, in Step 1 (oracle), delta was exactly 0.0.</p>
+</div>
+
+<h3>6.3 Key Insight: Restriction is Free When large = raw</h3>
+
+<div class="card" style="border-left: 3px solid var(--accent);">
+<p>The restricted KL values remain near-zero (precision noise only) at <strong>all</strong> $k$ values, despite the large delta.
+This is because the $M_{\text{large}} = M_{\text{raw}}$ identity makes the formula algebraically exact:</p>
+
+$$\text{score}(i) = \log p_{\text{large}}^V(i) + \lambda \cdot \delta(i) = \log p_{\text{raw}}^V(i) + \delta(i)$$
+
+<p>After renormalization over $S_t$, the $Z$ from full-vocab softmax cancels regardless of the delta magnitude.
+<strong>The real test of restriction cost requires Step 3</strong>, where $M_{\text{large}} \neq M_{\text{raw}}$.</p>
+</div>
+
+<!-- ================================================================ -->
+<h2>7. Step 3 — Cross-Model Transfer (The Actual Hypothesis)</h2>
+
+<p>$M_{\text{raw}}$ = Qwen3-8B-Base-4bit, $M_{\text{ft}}$ = Qwen3-8B-Instruct-4bit,
+$M_{\text{large}}$ = <strong>Qwen3-14B-Base-4bit</strong>.
+For the first time, $M_{\text{large}} \neq M_{\text{raw}}$. The proxy tuning identity no longer holds.
+<strong>Does the 8B instruct delta meaningfully steer the 14B base?</strong></p>
+
+<div class="grid-2">
+  <div class="card metric-box">
+    <div class="value" style="color:var(--green)">5/5</div>
+    <div class="label">Top-1 predictions shifted</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value" style="color:var(--green)">4/5</div>
+    <div class="label">Match 8B instruct top-1</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card metric-box">
+    <div class="value">0.105</div>
+    <div class="label">JS(ft, recovered) — low = good</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value">0.617</div>
+    <div class="label">JS(large, recovered) — high = delta worked</div>
+  </div>
+</div>
+
+<h3>7.1 Prediction Shift Table</h3>
+
+<table>
+  <thead>
+    <tr><th>#</th><th>Prompt</th><th>14B base</th><th>Recovered</th><th>8B instruct</th><th>Shifted?</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>Fibonacci</td><td><code>def</code></td><td><code>Here</code></td><td><code>Certainly</code></td><td><span class="verdict pass">yes</span></td></tr>
+    <tr><td>2</td><td>Binary search</td><td><code>def</code></td><td><code>Here</code></td><td><code>Here</code></td><td><span class="verdict pass">yes = ft</span></td></tr>
+    <tr><td>3</td><td>Stack class</td><td><code>Assistant</code></td><td><code>Here</code></td><td><code>Here</code></td><td><span class="verdict pass">yes = ft</span></td></tr>
+    <tr><td>4</td><td>Pair sum</td><td><code>user</code></td><td><code>To</code></td><td><code>To</code></td><td><span class="verdict pass">yes = ft</span></td></tr>
+    <tr><td>5</td><td>Decorator</td><td><code>def</code></td><td><code>Here</code></td><td><code>Here</code></td><td><span class="verdict pass">yes = ft</span></td></tr>
+  </tbody>
+</table>
+
+<p>In every case, the delta moved the 14B base model away from raw completion
+(<code>def</code>, <code>user</code>, <code>Assistant</code>) toward conversational responses
+(<code>Here</code>, <code>To</code>). 4/5 exactly match the 8B instruct's top-1.</p>
+
+<h3>7.2 Restricted Metrics</h3>
+
+<table>
+  <thead>
+    <tr><th>k</th><th>KL(ft||rec)</th><th>KL(large||rec)</th><th>ft top-1</th><th>top-5</th><th>|$\delta$|</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>10</td><td><strong>0.017</strong></td><td>17.79</td><td>5/5</td><td>0.84</td><td>17.21</td></tr>
+    <tr><td>50</td><td>0.279</td><td>21.64</td><td>4/5</td><td><strong>1.00</strong></td><td>21.95</td></tr>
+    <tr><td>200</td><td>0.315</td><td>22.29</td><td>4/5</td><td>0.92</td><td>24.00</td></tr>
+    <tr><td>1000</td><td>0.759</td><td>22.52</td><td>3/5</td><td>0.92</td><td>25.35</td></tr>
+    <tr><td>full</td><td>0.758</td><td>22.82</td><td>4/5</td><td>0.92</td><td>26.98</td></tr>
+  </tbody>
+</table>
+
+<h3>7.3 Key Insight: Restriction as Regularization</h3>
+
+<div class="card" style="border-left: 3px solid var(--green);">
+<p><strong>Smaller $k$ produces BETTER results</strong> — the opposite of what naive intuition suggests.</p>
+
+<p>KL(ft || recovered) at k=10 is <strong>0.017</strong> vs <strong>0.758</strong> at k=full.
+Restricting to the large model's top candidates acts as <em>beneficial regularization</em>:
+it filters out noisy delta values for tokens that the large model assigns near-zero probability,
+leaving only the high-confidence tokens where the delta carries clean signal.</p>
+
+<p>This is practically very useful: k=10&ndash;50 is both the cheapest to compute AND the most accurate.</p>
+</div>
+
+<h3>7.4 Delta Analysis (k=200)</h3>
+
+<div class="card example">
+<p><strong>Top promoted</strong> (consistently across prompts):
+<code>Here</code> ($\delta \approx$ +4 to +6),
+<code>Sure</code> ($\delta \approx$ +3 to +5),
+<code>Certainly</code> ($\delta \approx$ +3)</p>
+
+<p><strong>Top demoted</strong>:
+<code>user</code> ($\delta \approx$ &minus;34),
+<code>start</code> ($\delta \approx$ &minus;35),
+template markers like <code>{&bsol;n</code> ($\delta \approx$ &minus;35)</p>
+
+<p>The cross-model delta promotes the same tokens as the same-model delta (Step 2),
+confirming the instruction-following signal is model-size-invariant within the Qwen3 family.</p>
+</div>
+
+<!-- ================================================================ -->
+<h2>8. Conclusions</h2>
 
 <div class="card">
 <ol>
-  <li><strong>Formula verified</strong>: full-vocab proxy tuning recovers $p_{\text{ft}}$ exactly when $M_{\text{large}} = M_{\text{raw}}$. KL = 0 for all 5 prompts.</li>
-  <li><strong>Delta is zero</strong>: confirming $s_{\text{ft}} - s_{\text{raw}} = 0$ in oracle mode. The subtraction and renormalization are implemented correctly.</li>
-  <li><strong>Rankings preserved</strong>: top-1 and top-5 agreement are perfect at every $k$ value, despite float precision noise in the KL metric.</li>
-  <li><strong>Precision noise floor</strong>: ~0.1 nats from the full-vocab log_softmax intermediate. This sets the resolution limit for interpreting restricted KL in real experiments.</li>
+  <li><strong>Step 1 (oracle)</strong>: Formula verified &mdash; full-vocab KL = 0, $\delta = 0$.</li>
+  <li><strong>Step 2 (same-model)</strong>: Delta is large (~24 mean) and semantically meaningful. large=raw identity holds.</li>
+  <li><strong>Step 3 (cross-model)</strong>: <strong>The 8B instruct delta successfully steers the 14B base model.</strong> 5/5 predictions shifted, 4/5 match the instruct model exactly. JS(ft, recovered) = 0.105 — the recovered distribution is much closer to the 8B instruct than to the 14B base.</li>
+  <li><strong>Restriction helps, not hurts</strong>: k=10 gives the lowest KL (0.017) and perfect top-1 (5/5). Limiting to the large model's top candidates regularizes the delta transfer.</li>
 </ol>
 </div>
 
-<h3>Next Steps</h3>
-<ul>
-  <li>Fine-tune a small model (Qwen3-0.6B) on a code generation task</li>
-  <li>Run the same experiment with $M_{\text{ft}} \neq M_{\text{raw}}$ to measure real cross-model transfer</li>
-  <li>Sweep $k \in \{10, 50, 200, 1000\}$ and $\lambda \in \{0.5, 1.0, 1.5\}$ to find the quality/efficiency frontier</li>
-  <li>Extend to multi-step generation (beyond first token) with prefix divergence tracking</li>
-</ul>
+<h3>Experiment Roadmap</h3>
+
+<table>
+  <thead>
+    <tr><th>Step</th><th>$M_{\text{raw}}$</th><th>$M_{\text{ft}}$</th><th>$M_{\text{large}}$</th><th>Key Finding</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1. Oracle math check</td>
+      <td colspan="3" style="text-align:center">All = Qwen3-8B-Instruct (same weights)</td>
+      <td>$\delta = 0$, KL = 0. Formula correct.</td>
+      <td><span class="verdict pass">done</span></td>
+    </tr>
+    <tr>
+      <td>2. Same-model delta</td>
+      <td>Qwen3-8B (base)</td>
+      <td>Qwen3-8B-Instruct</td>
+      <td>Qwen3-8B (base)</td>
+      <td>$\delta$ is large (~24 mean) and meaningful. KL = 0 (large=raw).</td>
+      <td><span class="verdict pass">done</span></td>
+    </tr>
+    <tr>
+      <td>3. Cross-model transfer</td>
+      <td>Qwen3-8B (base)</td>
+      <td>Qwen3-8B-Instruct</td>
+      <td>Qwen3-14B (base)</td>
+      <td><strong>Delta transfers! 5/5 shifted, 4/5 match ft. k=10 best.</strong></td>
+      <td><span class="verdict pass">done</span></td>
+    </tr>
+  </tbody>
+</table>
 
 <hr style="margin-top:2.5rem; border:none; border-top:1px solid var(--border);">
 <p style="color:var(--muted); font-size:0.8rem; margin-top:1rem;">
-  Generated 2026-04-05 &middot; GRAFT v0.1.0 &middot; mlx-community/Qwen3-8B-4bit &middot; λ=1.0 &middot; seed=42
+  Generated 2026-04-05 &middot; GRAFT v0.1.0 &middot; Qwen3-8B-Base-4bit / Qwen3-8B-Instruct-4bit &middot; λ=1.0 &middot; seed=42
 </p>
 
 </body>

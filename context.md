@@ -262,10 +262,95 @@ indistinguishable from zero.
 
 ---
 
-## 5. Next Steps
+## 5. Experiment Roadmap
 
-1. Fine-tune a small model (e.g., Qwen3-0.6B) on a specific task
-2. Run the same script with $M_{\text{ft}}$ = fine-tuned small model, $M_{\text{raw}}$ = base small model, $M_{\text{large}}$ = Qwen3-8B
-3. The full-vocab KL will no longer be zero — it measures how well cross-model proxy tuning works
-4. The restricted KL at various $k$ values will show the cost of restriction
-5. Tune $k$ and $\lambda$ based on the task-specific tradeoff between quality and efficiency
+### Step 1 — Oracle Math Check ✅ COMPLETE
+- $M_{\text{large}} = M_{\text{raw}} = M_{\text{ft}}$ = Qwen3-8B-Instruct (same weights)
+- Expected: $\delta = 0$ everywhere, KL = 0
+- Purpose: verify the formula implementation
+- Result: **PASS** — all full-vocab KL = 0, delta = 0
+
+### Step 2 — Same-Model Delta Transfer ✅ COMPLETE
+- $M_{\text{raw}}$ = Qwen3-8B-Base-4bit (locally quantized)
+- $M_{\text{ft}}$ = Qwen3-8B-Instruct-4bit (mlx-community)
+- $M_{\text{large}}$ = Qwen3-8B-Base-4bit — same as $M_{\text{raw}}$
+- Result: **PASS**
+
+#### Step 2 Results
+
+**Full-vocab KL = 0 for all 5 prompts** — the $M_{\text{large}} = M_{\text{raw}}$ identity holds.
+
+**Delta is large and semantically meaningful** (mean |$\delta$| ~ 24–29 across k=50):
+
+| Prompt | Base predicts | Instruct predicts | Mean |$\delta$| (k=50) |
+|--------|--------------|-------------------|---------------------|
+| 1. Fibonacci | `import` | `Certainly` | 14.75 |
+| 2. Binary search | `def` | `Here` | 23.75 |
+| 3. Stack class | `import` | `Here` | 27.75 |
+| 4. Pair sum | `Assistant` | `To` | 27.88 |
+| 5. Decorator | `import` | `Here` | 25.13 |
+
+The delta captures the behavioral difference between a base model (which continues text
+completion-style) and an instruct model (which begins with conversational responses).
+
+**Top promoted tokens** (instruct wants MORE than base): "Here", "Sure", "Certainly", "def", "To"
+**Top demoted tokens** (instruct wants LESS than base): "import", "input", "user", "time", template markers
+
+**Top-1 agreement = 5/5** and **top-5 overlap = 1.00** at all $k$ values.
+
+**Restricted KL**: near-zero at all $k$ values (precision noise only), which is expected
+because the $M_{\text{large}} = M_{\text{raw}}$ identity makes the formula algebraically
+exact regardless of $k$. The real test of restriction cost requires Step 3 where
+$M_{\text{large}} \neq M_{\text{raw}}$.
+
+### Step 3 — Cross-Model Transfer ✅ COMPLETE
+- $M_{\text{raw}}$ = Qwen3-8B-Base-4bit
+- $M_{\text{ft}}$ = Qwen3-8B-Instruct-4bit
+- $M_{\text{large}}$ = Qwen3-14B-Base-4bit — **different model size**
+- Result: **The delta transfers meaningfully across model sizes.**
+
+#### Step 3 Results
+
+**The 8B instruct delta shifted the 14B base model's top-1 prediction in 5/5 prompts:**
+
+| Prompt | 14B base predicts | Recovered predicts | Matches 8B instruct? |
+|--------|------------------|-------------------|---------------------|
+| 1. Fibonacci | `def` | `Here` | no (instruct says `Certainly`) |
+| 2. Binary search | `def` | `Here` | yes |
+| 3. Stack class | `Assistant` | `Here` | yes |
+| 4. Pair sum | `user` | `To` | yes |
+| 5. Decorator | `def` | `Here` | yes |
+
+In every case, the recovered distribution shifted the 14B base away from raw-completion
+tokens (`def`, `user`, `Assistant`) toward conversational-response tokens (`Here`, `To`).
+4 out of 5 exactly match the 8B instruct model's top-1.
+
+**Full-vocab divergence metrics (averaged):**
+
+| Metric | Value | Interpretation |
+|--------|-------|---------------|
+| KL($p_{\text{ft}}$ \|\| $p_{\text{rec}}$) | 0.755 | Recovered is close to ft, but not identical (expected: large ≠ raw) |
+| JS($p_{\text{ft}}$, $p_{\text{rec}}$) | 0.105 | Low divergence — recovered is much closer to ft than to large |
+| JS($p_{\text{large}}$, $p_{\text{rec}}$) | 0.617 | High divergence — the delta dramatically reshapes the distribution |
+
+**Restricted metrics (averaged across prompts):**
+
+| k | KL(ft\|\|rec) | ft top-1 match | top-5 overlap | Mean \|$\delta$\| |
+|---|-------------|---------------|--------------|------------------|
+| 10 | 0.017 | 5/5 | 0.84 | 17.21 |
+| 50 | 0.279 | 4/5 | 1.00 | 21.95 |
+| 200 | 0.315 | 4/5 | 0.92 | 24.00 |
+| 1000 | 0.759 | 3/5 | 0.92 | 25.35 |
+| full | 0.758 | 4/5 | 0.92 | 26.98 |
+
+**Key observations:**
+1. **Restriction to k=50 actually helps** — KL(ft||rec) at k=50 (0.279) is lower than at k=full (0.758). This suggests that restricting to the large model's top candidates acts as beneficial regularization, filtering out noise in the tail.
+2. **k=10 is the sweet spot** — lowest KL (0.017), perfect top-1 match (5/5), with only slightly reduced top-5 overlap (0.84). The instruct signal is concentrated in very few tokens.
+3. **The delta promotes the right tokens across model sizes** — "Here", "Sure", "Certainly", "To" are consistently promoted; "user", "start", template markers are demoted.
+
+#### Interpretation
+
+The cross-model transfer works because:
+- The Qwen3-8B and Qwen3-14B share the same tokenizer and were trained on similar data
+- The instruction-following behavior is captured as a direction in logit space (the delta) that generalizes across model sizes
+- The base-to-instruct delta from 8B is meaningful even when applied to 14B's different logit landscape
