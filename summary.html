@@ -559,8 +559,10 @@ confirming the instruction-following signal is model-size-invariant within the Q
 <ol>
   <li><strong>Step 1 (oracle)</strong>: Formula verified &mdash; full-vocab KL = 0, $\delta = 0$.</li>
   <li><strong>Step 2 (same-model)</strong>: Delta is large (~24 mean) and semantically meaningful. large=raw identity holds.</li>
-  <li><strong>Step 3 (cross-model)</strong>: <strong>The 8B instruct delta successfully steers the 14B base model.</strong> 5/5 predictions shifted, 4/5 match the instruct model exactly. JS(ft, recovered) = 0.105 — the recovered distribution is much closer to the 8B instruct than to the 14B base.</li>
-  <li><strong>Restriction helps, not hurts</strong>: k=10 gives the lowest KL (0.017) and perfect top-1 (5/5). Limiting to the large model's top candidates regularizes the delta transfer.</li>
+  <li><strong>Step 3 (cross-model)</strong>: <strong>The 8B instruct delta successfully steers the 14B base model.</strong> 5/5 predictions shifted, 4/5 match the instruct model exactly.</li>
+  <li><strong>Restriction helps, not hurts</strong>: k=10 gives the lowest KL (0.017) and perfect top-1 (5/5).</li>
+  <li><strong>IFEval at scale</strong>: 85.8% top-1 match across 541 prompts (first-token); 92.1% at k=10.</li>
+  <li><strong>Full generation</strong>: <strong>54% IFEval strict accuracy</strong> (= 8B instruct), up from 36% for the raw 14B base. +18pp with zero fine-tuning. Delta beats instruct on change_case (10/10 vs 8/10).</li>
 </ol>
 </div>
 
@@ -740,7 +742,101 @@ Thy quest doth lead thee to lands of the...</code></pre>
 </details>
 
 <!-- ================================================================ -->
-<h2>11. Decisive Conclusion: What GRAFT Means for You</h2>
+<h2>11. IFEval Quantitative Scores (Full Generation)</h2>
+
+<p>We evaluated the 50 generated responses against IFEval's <strong>verifiable instruction-following constraints</strong>
+(keyword presence, word count, case, punctuation, formatting, etc.). This is the gold-standard
+measure: does the generated text actually satisfy what was asked?</p>
+
+<h3>11.1 Headline Results</h3>
+
+<div class="grid-2">
+  <div class="card metric-box">
+    <div class="value" style="color:var(--green)">54.0%</div>
+    <div class="label">Delta strict accuracy (= 8B instruct)</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value">36.0%</div>
+    <div class="label">14B base strict accuracy (no delta)</div>
+  </div>
+</div>
+
+<div class="card" style="border-left: 4px solid var(--green);">
+<p><strong>+18 percentage points</strong> improvement from grafting the 8B delta onto the 14B base — with zero fine-tuning.
+The delta-steered model matches the 8B instruct model exactly at prompt level.</p>
+</div>
+
+<h3>11.2 Prompt-Level Strict Accuracy</h3>
+<p>A prompt passes only if <em>all</em> its instructions are satisfied.</p>
+
+<table>
+  <thead><tr><th>Model</th><th>Pass</th><th>Accuracy</th></tr></thead>
+  <tbody>
+    <tr><td>14B base (no delta)</td><td>18/50</td><td>36.0%</td></tr>
+    <tr><td><strong>Delta-steered 14B</strong></td><td><strong>27/50</strong></td><td><strong>54.0%</strong></td></tr>
+    <tr><td>8B instruct (ceiling)</td><td>27/50</td><td>54.0%</td></tr>
+  </tbody>
+</table>
+
+<h3>11.3 Instruction-Level Accuracy</h3>
+<p>Each individual constraint scored independently.</p>
+
+<table>
+  <thead><tr><th>Model</th><th>Pass</th><th>Accuracy</th></tr></thead>
+  <tbody>
+    <tr><td>14B base</td><td>35/76</td><td>46.1%</td></tr>
+    <tr><td><strong>Delta-steered 14B</strong></td><td><strong>50/76</strong></td><td><strong>65.8%</strong></td></tr>
+    <tr><td>8B instruct</td><td>51/76</td><td>67.1%</td></tr>
+  </tbody>
+</table>
+
+<h3>11.4 Per-Category Breakdown</h3>
+
+<table>
+  <thead><tr><th>Category</th><th>Total</th><th>14B base</th><th>Delta</th><th>8B instruct</th></tr></thead>
+  <tbody>
+    <tr><td>change_case</td><td>10</td><td>3 (30%)</td><td style="color:var(--green)"><strong>10 (100%)</strong></td><td>8 (80%)</td></tr>
+    <tr><td>punctuation</td><td>6</td><td>1 (17%)</td><td style="color:var(--green)"><strong>6 (100%)</strong></td><td>6 (100%)</td></tr>
+    <tr><td>keywords</td><td>16</td><td>7 (44%)</td><td><strong>11 (69%)</strong></td><td>12 (75%)</td></tr>
+    <tr><td>detectable_format</td><td>14</td><td>7 (50%)</td><td>7 (50%)</td><td>7 (50%)</td></tr>
+    <tr><td>length_constraints</td><td>12</td><td>4 (33%)</td><td>4 (33%)</td><td>5 (42%)</td></tr>
+    <tr><td>startend</td><td>7</td><td>3 (43%)</td><td>3 (43%)</td><td>3 (43%)</td></tr>
+    <tr><td>combination</td><td>6</td><td>6 (100%)</td><td>6 (100%)</td><td>6 (100%)</td></tr>
+    <tr><td>language</td><td>2</td><td>2 (100%)</td><td>2 (100%)</td><td>2 (100%)</td></tr>
+  </tbody>
+</table>
+
+<div class="card example">
+<p><strong>Notable: delta <em>beats</em> the 8B instruct on change_case</strong> (10/10 vs 8/10).
+The 14B base model's larger capacity combines with the delta's case-transformation signal
+to produce more reliable case control than the smaller instruct model alone.</p>
+
+<p><strong>Where delta doesn't help:</strong> length_constraints (both 33%) and startend (both 43%).
+These require the model to plan ahead over many tokens — the first-token delta signal
+isn't sufficient. These may improve with $\lambda$ tuning or multi-token lookahead.</p>
+</div>
+
+<h3>11.5 Examples: Delta Passes Where Base Fails</h3>
+
+<div class="card">
+<pre style="background:none;padding:0;font-size:0.85rem"><code><strong>"Write an itinerary for Japan in archaic English"</strong>
+  Constraint: punctuation:no_comma
+  14B base: FAIL (used commas in raw completion)
+  Delta:    PASS (wrote comma-free archaic verse)
+
+<strong>"Write a 2 paragraph critique in ALL CAPITAL LETTERS"</strong>
+  Constraint: change_case:english_capital
+  14B base: FAIL (mixed case output)
+  Delta:    PASS (entire response in uppercase)
+
+<strong>"Write a letter in all lowercase letters asking them to vote"</strong>
+  Constraint: change_case:english_lowercase
+  14B base: FAIL (capitalized first letter)
+  Delta:    PASS (consistent lowercase throughout)</code></pre>
+</div>
+
+<!-- ================================================================ -->
+<h2>12. Decisive Conclusion: What GRAFT Means for You</h2>
 
 <div class="card" style="border-left: 4px solid var(--green); padding: 1.5rem;">
 
@@ -762,7 +858,8 @@ $$\underbrace{p_{\text{steered}}}_{\text{14B that follows instructions}} = \text
 <li><p><strong>Instant instruction-tuning for new large models.</strong>
 When a new base model is released in the same family (e.g., Qwen3-32B-Base), you don't need to
 wait for the instruct variant. Graft the 8B instruct delta onto it immediately.
-The delta transferred at <strong>85.8% top-1 accuracy</strong> across 541 IFEval prompts.</p></li>
+The delta transferred at <strong>85.8% top-1 accuracy</strong> across 541 IFEval prompts,
+and achieved <strong>54% IFEval strict accuracy</strong> on full generation (= 8B instruct, up from 36% base).</p></li>
 
 <li><p><strong>No GPU training required.</strong>
 The entire method runs at inference time. No fine-tuning, no gradient computation, no training data.

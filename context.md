@@ -399,6 +399,46 @@ Results show that delta-steered generation produces instruction-following text
 that closely matches the 8B instruct model's output style and content, while
 the 14B base alone produces raw text completion.
 
+### IFEval Instruction-Following Scores (50 prompts, full generation)
+
+We evaluated the generated responses against IFEval's verifiable constraints
+(keyword presence, word count, formatting, case, punctuation, etc.):
+
+**Prompt-level strict accuracy** (all instructions in a prompt satisfied):
+
+| Model | Accuracy |
+|-------|----------|
+| 14B base (no delta) | 18/50 (36.0%) |
+| Delta-steered 14B | **27/50 (54.0%)** |
+| 8B instruct (ceiling) | 27/50 (54.0%) |
+
+**Instruction-level accuracy** (per individual constraint):
+
+| Model | Accuracy |
+|-------|----------|
+| 14B base | 35/76 (46.1%) |
+| Delta-steered 14B | **50/76 (65.8%)** |
+| 8B instruct | 51/76 (67.1%) |
+
+The delta-steered 14B matches the 8B instruct exactly at prompt level (both 54%)
+and nearly matches at instruction level (65.8% vs 67.1%).
+
+**Per-category breakdown:**
+
+| Category | Base | Delta | Instruct |
+|----------|------|-------|----------|
+| change_case | 3/10 | **10/10** | 8/10 |
+| punctuation | 1/6 | **6/6** | 6/6 |
+| keywords | 7/16 | **11/16** | 12/16 |
+| detectable_format | 7/14 | 7/14 | 7/14 |
+| length_constraints | 4/12 | 4/12 | 5/12 |
+| startend | 3/7 | 3/7 | 3/7 |
+| combination | 6/6 | 6/6 | 6/6 |
+| language | 2/2 | 2/2 | 2/2 |
+
+Notable: the delta-steered model **beats** the 8B instruct on `change_case` (10/10 vs 8/10),
+likely because the 14B base's larger capacity combines well with the delta's case-transformation signal.
+
 ---
 
 ## 8. Conclusion
@@ -413,5 +453,6 @@ Key findings:
 1. The formula is mathematically correct (Step 1: KL=0 in oracle mode)
 2. The delta carries meaningful instruction-following signal (Step 2: mean |$\delta$| ~ 24)
 3. The delta transfers across model sizes (Step 3: 5/5 shifted, 4/5 match ft)
-4. The transfer holds at scale (IFEval: 85.8% top-1 match on 541 prompts)
+4. The transfer holds at scale (IFEval: 85.8% top-1 match on 541 prompts, first-token)
 5. Restriction to k=10 is both cheapest and most accurate (92.1% top-1 match)
+6. Full generation: delta-steered 14B achieves **54% IFEval strict accuracy** (= 8B instruct), up from 36% for the raw 14B base — an 18pp improvement with zero fine-tuning
