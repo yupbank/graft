@@ -73,6 +73,10 @@ def load_model(model_path: str):  # type: ignore[no-untyped-def]
 # ---------------------------------------------------------------------------
 # Simple greedy generation (single model)
 # ---------------------------------------------------------------------------
+def _flush() -> None:
+    sys.stdout.flush()
+
+
 def generate_greedy(
     model: nn.Module,
     prompt_tokens: mx.array,
@@ -101,6 +105,8 @@ def generate_greedy(
         if tid == eos_token_id:
             break
 
+    # Free KV cache
+    del cache
     return tokens
 
 
@@ -150,6 +156,8 @@ def generate_delta(
         if tid == eos_token_id:
             break
 
+    # Free KV caches
+    del cache_large, cache_raw, cache_ft
     return tokens
 
 
@@ -194,36 +202,50 @@ def main() -> None:
 
     # Load IFEval prompts
     print("Loading IFEval dataset ...")
+    _flush()
     from datasets import load_dataset
 
     ds = load_dataset("google/IFEval", split="train")
     prompts = [ex["prompt"] for ex in ds][:NUM_PROMPTS]
-    print(f"  Using {len(prompts)} prompts")
-    print()
+    print(f"  {len(prompts)} prompts loaded")
+    _flush()
 
-    # Load all 3 models
-    print("Loading all 3 models simultaneously ...")
+    # Load models one at a time with progress
+    print(f"\n  Loading 8B instruct: {MODEL_FT} ...")
+    _flush()
     t0 = time.time()
     ft_model, tokenizer = load_model(MODEL_FT)
+    print(f"    done ({time.time() - t0:.1f}s, {mx.get_peak_memory() / 1e9:.1f} GB peak)")
+    _flush()
+
+    print(f"  Loading 8B base: {MODEL_RAW} ...")
+    _flush()
+    t0 = time.time()
     raw_model, _ = load_model(MODEL_RAW)
+    print(f"    done ({time.time() - t0:.1f}s, {mx.get_peak_memory() / 1e9:.1f} GB peak)")
+    _flush()
+
+    print(f"  Loading 14B base: {MODEL_LARGE} ...")
+    _flush()
+    t0 = time.time()
     large_model, _ = load_model(MODEL_LARGE)
-    print(f"  All loaded in {time.time() - t0:.1f}s")
+    print(f"    done ({time.time() - t0:.1f}s, {mx.get_peak_memory() / 1e9:.1f} GB peak)")
+    _flush()
 
     eos_id = tokenizer.eos_token_id
     if eos_id is None:
-        eos_id = 151643  # Qwen3 default
-    print(f"  EOS token id: {eos_id}")
-    print()
-
-    # Check memory
-    peak = mx.get_peak_memory() / 1e9
-    print(f"  Peak memory after loading: {peak:.1f} GB")
-    print()
+        eos_id = 151645  # Qwen3 default
+    print(f"\n  All models loaded. EOS={eos_id}. Starting generation.\n")
+    _flush()
 
     results = []
+    total_t0 = time.time()
 
     for i, prompt_text in enumerate(prompts):
-        print(f"Prompt {i + 1}/{len(prompts)}: {prompt_text[:60]}...")
+        prompt_t0 = time.time()
+        short = prompt_text[:55].replace("\n", " ")
+        print(f"[{i + 1}/{len(prompts)}] {short}...")
+        _flush()
 
         messages = [{"role": "user", "content": prompt_text}]
         token_ids = tokenizer.apply_chat_template(
@@ -239,6 +261,8 @@ def main() -> None:
         base_tokens = generate_greedy(large_model, prompt_tokens, MAX_TOKENS, eos_id)
         base_time = time.time() - t0
         base_text = tokenizer.decode(base_tokens)
+        print(f"  base:  {len(base_tokens)} tok, {base_time:.1f}s")
+        _flush()
 
         # 2. Delta-steered
         t0 = time.time()
@@ -254,17 +278,24 @@ def main() -> None:
         )
         delta_time = time.time() - t0
         delta_text = tokenizer.decode(delta_tokens)
+        print(f"  delta: {len(delta_tokens)} tok, {delta_time:.1f}s")
+        _flush()
 
         # 3. 8B instruct alone
         t0 = time.time()
         instruct_tokens = generate_greedy(ft_model, prompt_tokens, MAX_TOKENS, eos_id)
         instruct_time = time.time() - t0
         instruct_text = tokenizer.decode(instruct_tokens)
+        print(f"  inst:  {len(instruct_tokens)} tok, {instruct_time:.1f}s")
 
-        print(f"  14B base ({base_time:.1f}s):    {base_text[:80]}...")
-        print(f"  Delta     ({delta_time:.1f}s):    {delta_text[:80]}...")
-        print(f"  8B inst   ({instruct_time:.1f}s):    {instruct_text[:80]}...")
-        print()
+        elapsed = time.time() - total_t0
+        rate = (i + 1) / elapsed * 60
+        print(f"  total: {time.time() - prompt_t0:.1f}s  ({rate:.1f} prompts/min)")
+        _flush()
+
+        # Free memory between prompts
+        gc.collect()
+        mx.clear_cache()
 
         results.append(
             {
@@ -282,7 +313,15 @@ def main() -> None:
             }
         )
 
-    # Cleanup
+        # Save incrementally every 10 prompts
+        if (i + 1) % 10 == 0:
+            Path(OUTPUT_JSON).parent.mkdir(parents=True, exist_ok=True)
+            with open(OUTPUT_JSON, "w") as f:
+                json.dump(results, f, indent=2, ensure_ascii=False)
+            print(f"  ** saved {len(results)} results to {OUTPUT_JSON}")
+            _flush()
+
+    # Final cleanup
     del large_model, raw_model, ft_model
     gc.collect()
     mx.synchronize()
