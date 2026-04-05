@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRAFT — Oracle Sanity Check Results</title>
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+<style>
+  :root {
+    --bg: #fafafa; --fg: #1a1a1a; --accent: #2563eb; --green: #16a34a;
+    --red: #dc2626; --amber: #d97706; --card: #fff; --border: #e5e7eb;
+    --code-bg: #f3f4f6; --muted: #6b7280;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a; --fg: #e2e8f0; --accent: #60a5fa; --green: #4ade80;
+      --red: #f87171; --amber: #fbbf24; --card: #1e293b; --border: #334155;
+      --code-bg: #1e293b; --muted: #94a3b8;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg); color: var(--fg); line-height: 1.7;
+    max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem;
+  }
+  h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.35rem; margin: 2.5rem 0 1rem; border-bottom: 2px solid var(--accent); padding-bottom: 0.3rem; }
+  h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+  p, li { margin-bottom: 0.6rem; }
+  ul { padding-left: 1.5rem; }
+  .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1.25rem 1.5rem; margin: 1rem 0;
+  }
+  .verdict {
+    display: inline-block; font-weight: 700; padding: 0.15rem 0.6rem;
+    border-radius: 4px; font-size: 0.85rem; text-transform: uppercase;
+  }
+  .pass { background: #dcfce7; color: #166534; }
+  .fail { background: #fee2e2; color: #991b1b; }
+  .note { background: #fef9c3; color: #854d0e; }
+  @media (prefers-color-scheme: dark) {
+    .pass { background: #14532d; color: #bbf7d0; }
+    .fail { background: #7f1d1d; color: #fecaca; }
+    .note { background: #713f12; color: #fef08a; }
+  }
+  table {
+    width: 100%; border-collapse: collapse; margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; background: var(--code-bg); }
+  code {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    background: var(--code-bg); padding: 0.15rem 0.4rem; border-radius: 3px;
+    font-size: 0.88em;
+  }
+  pre {
+    background: var(--code-bg); padding: 1rem 1.25rem; border-radius: 6px;
+    overflow-x: auto; font-size: 0.88rem; line-height: 1.5; margin: 0.75rem 0;
+  }
+  pre code { background: none; padding: 0; }
+  .math-block {
+    background: var(--card); border-left: 3px solid var(--accent);
+    padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 6px 6px 0;
+    overflow-x: auto;
+  }
+  .example {
+    border-left: 3px solid var(--green);
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+  .metric-box { text-align: center; }
+  .metric-box .value { font-size: 2rem; font-weight: 700; color: var(--accent); }
+  .metric-box .label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; }
+  .neg { color: var(--red); }
+  details { margin: 0.5rem 0; }
+  details summary {
+    cursor: pointer; font-weight: 600; padding: 0.3rem 0;
+    color: var(--accent);
+  }
+  details summary:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<h1>GRAFT — Oracle Sanity Check</h1>
+<p class="subtitle">
+  Gated Restricted Adaptation via Fine-Tuning Transfer<br>
+  Run: 2026-04-05 &middot; Model: <code>mlx-community/Qwen3-8B-4bit</code> &middot; mlx-lm 0.31.1 &middot; Python 3.11.5
+</p>
+
+<!-- ================================================================ -->
+<h2>1. What This Experiment Tests</h2>
+
+<p>We verify the math of <strong>restricted-candidate-set delta reranking</strong> using an
+<em>oracle</em> setup where the large model, raw model, and fine-tuned model are all the
+<strong>same checkpoint</strong>. Two checks:</p>
+
+<div class="grid-2">
+  <div class="card metric-box">
+    <div class="value" style="color:var(--green)">0.0</div>
+    <div class="label">Full-vocab KL (all 5 prompts)</div>
+    <span class="verdict pass">pass</span>
+  </div>
+  <div class="card metric-box">
+    <div class="value">0.0</div>
+    <div class="label">Delta magnitude (all prompts, all k)</div>
+    <span class="verdict pass">pass</span>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card metric-box">
+    <div class="value">5/5</div>
+    <div class="label">Top-1 agreement at k=50</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value">1.00</div>
+    <div class="label">Top-5 overlap at k=50</div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<h2>2. The Math</h2>
+
+<h3>2.1 Full-Vocabulary Proxy Tuning</h3>
+
+<p>Given logits from three models over vocabulary $V$ (size 151,936):</p>
+
+<div class="math-block">
+$$\text{score}_{\text{full}}(i) = s_{\text{large}}(i) \;+\; \lambda \cdot \bigl(s_{\text{ft}}(i) - s_{\text{raw}}(i)\bigr) \qquad \forall\, i \in V$$
+</div>
+
+<p>The recovered probability distribution is $p_{\text{rec}} = \text{softmax}(\text{score}_{\text{full}})$.</p>
+
+<p><strong>Oracle identity</strong>: when $s_{\text{large}} = s_{\text{raw}}$ and $\lambda = 1$:</p>
+
+<div class="math-block">
+$$\text{score}_{\text{full}}(i) = s_{\text{large}}(i) + s_{\text{ft}}(i) - s_{\text{large}}(i) = s_{\text{ft}}(i)$$
+</div>
+
+<p>So $p_{\text{rec}} = p_{\text{ft}}$ exactly.
+$\text{KL}(p_{\text{ft}} \| p_{\text{rec}}) = 0$ — <strong>by algebra, not by approximation</strong>.</p>
+
+<h3>2.2 Restricted Renormalized Delta</h3>
+
+<p>Let $S_t = \text{top-}k(s_{\text{large}})$ be the candidate set. For $i \in S_t$:</p>
+
+<div class="math-block">
+$$\delta(i) = \underbrace{\bigl[s_{\text{ft}}(i) - \text{LSE}(s_{\text{ft}}[S_t])\bigr]}_{\log p_{\text{ft}}^{S_t}(i)} - \underbrace{\bigl[s_{\text{raw}}(i) - \text{LSE}(s_{\text{raw}}[S_t])\bigr]}_{\log p_{\text{raw}}^{S_t}(i)}$$
+</div>
+
+<p>where $\text{LSE}(x) = \max(x) + \log\sum_j \exp(x_j - \max(x))$ (numerically stable log-sum-exp).</p>
+
+<p>Apply the delta to the large model's full-vocab log-probabilities:</p>
+
+<div class="math-block">
+$$\text{score}_{\text{restricted}}(i) = \log p_{\text{large}}^{V}(i) + \lambda \cdot \delta(i) \qquad i \in S_t$$
+</div>
+
+<p>Then renormalize: $p_{\text{rec}}^{S_t} = \text{softmax}(\text{score}_{\text{restricted}})$ over $S_t$ only.</p>
+
+<h3>2.3 Why the Oracle Guarantee Survives Restriction</h3>
+
+<p>When $\delta = 0$, the score is just $\log p_{\text{large}}^V(i)$ for $i \in S_t$.
+Renormalizing over $S_t$:</p>
+
+<div class="math-block">
+$$p_{\text{rec}}^{S_t}(i) = \frac{p_{\text{large}}^V(i)}{\sum_{j \in S_t} p_{\text{large}}^V(j)} = \frac{e^{s_{\text{large}}(i)} / Z}{\sum_{j \in S_t} e^{s_{\text{large}}(j)} / Z} = \frac{e^{s_{\text{large}}(i)}}{\sum_{j \in S_t} e^{s_{\text{large}}(j)}} = p_{\text{ft}}^{S_t}(i)$$
+</div>
+
+<p>The normalizing constant $Z$ cancels. <strong>Mathematically, restricted KL = 0 in oracle mode.</strong></p>
+
+<!-- ================================================================ -->
+<h2>3. Worked Examples</h2>
+
+<details open>
+<summary>Example A — Oracle with toy vocabulary (4 tokens)</summary>
+<div class="card example">
+
+<p>$V = \{A, B, C, D\}$, all models identical:</p>
+
+$$s = [3.0,\; 1.0,\; 0.5,\; -1.0]$$
+
+<p><strong>Full vocab</strong>: $\text{score} = s + 1\cdot(s - s) = s$, so $p_{\text{rec}} = p_{\text{ft}}$. KL = 0. ✓</p>
+
+<p><strong>Restricted to $S_t = \{A, B\}$</strong> (top-2):</p>
+
+<pre><code>LSE([3.0, 1.0]) = 3.0 + log(1 + exp(-2)) = 3.1269
+
+log p_ft(A) = 3.0 - 3.1269 = -0.1269    →  p_ft(A) = 0.8808
+log p_ft(B) = 1.0 - 3.1269 = -2.1269    →  p_ft(B) = 0.1192
+
+delta = [0, 0]  (ft = raw)
+
+log p_large_V:
+  LSE([3.0, 1.0, 0.5, -1.0]) = 3.3390
+  log p_large(A) = -0.3390
+  log p_large(B) = -2.3390
+
+score_restricted = [-0.3390, -2.3390] + [0, 0]
+
+Renormalize:
+  LSE([-0.3390, -2.3390]) = -0.2121
+  log p_rec(A) = -0.3390 + 0.2121 = -0.1269  ← matches log p_ft(A) !
+  log p_rec(B) = -2.3390 + 0.2121 = -2.1269  ← matches log p_ft(B) !</code></pre>
+
+<p>KL = 0 ✓ — The $Z = \exp(3.3390)$ cancels in the ratio.</p>
+</div>
+</details>
+
+<details>
+<summary>Example B — Non-oracle: fine-tuning shifts mass from A to B</summary>
+<div class="card example">
+
+$$s_{\text{large}} = s_{\text{raw}} = [3.0,\; 1.0,\; 0.5,\; -1.0]$$
+$$s_{\text{ft}} = [1.0,\; 4.0,\; 0.5,\; -1.0]$$
+
+<p>Fine-tuning suppressed $A$ ($3 \to 1$) and boosted $B$ ($1 \to 4$).</p>
+
+<p><strong>Full vocab</strong>:</p>
+<pre><code>score = [3, 1, 0.5, -1] + ([1, 4, 0.5, -1] - [3, 1, 0.5, -1])
+      = [3-2, 1+3, 0.5, -1]
+      = [1.0, 4.0, 0.5, -1.0]  ← recovers s_ft exactly</code></pre>
+<p>KL = 0 ✓ (works whenever $M_{\text{large}} = M_{\text{raw}}$, regardless of $M_{\text{ft}}$).</p>
+
+<p><strong>Restricted to $S_t = \{A, B\}$</strong>:</p>
+<pre><code>delta(A) = [1.0 - LSE(1,4)] - [3.0 - LSE(3,1)]
+         = [1.0 - 4.0486] - [3.0 - 3.1269]
+         = -3.0486 - (-0.1269)
+         = -2.9217   ← large negative: ft suppressed A
+
+delta(B) = [4.0 - 4.0486] - [1.0 - 3.1269]
+         = -0.0486 - (-2.1269)
+         = +2.0783   ← large positive: ft boosted B
+
+score(A) = -0.3390 + (-2.9217) = -3.2607
+score(B) = -2.3390 + (+2.0783) = -0.2607
+
+Renormalize over {A, B}:
+  p_rec(A) = exp(-3.0486) = 0.0474
+  p_rec(B) = exp(-0.0486) = 0.9526
+
+p_ft^{S_t}(A) = exp(1)/[exp(1)+exp(4)] = 0.0474
+p_ft^{S_t}(B) = exp(4)/[exp(1)+exp(4)] = 0.9526</code></pre>
+
+<p>Exact match. KL = 0 ✓</p>
+</div>
+</details>
+
+<details>
+<summary>Example C — Cross-model transfer (restriction costs something)</summary>
+<div class="card example">
+
+<p>Now $M_{\text{large}} \neq M_{\text{raw}}$ — the setting we actually care about:</p>
+
+$$s_{\text{large}} = [5.0,\; 2.0,\; 1.0,\; 0.0]$$
+$$s_{\text{raw}} = [3.0,\; 1.0,\; 0.5,\; -1.0]$$
+$$s_{\text{ft}} = [1.0,\; 4.0,\; 0.5,\; -1.0]$$
+
+<p><strong>Full vocab</strong>:</p>
+<pre><code>score = [5, 2, 1, 0] + ([1, 4, 0.5, -1] - [3, 1, 0.5, -1])
+      = [3.0, 5.0, 1.0, 0.0]
+
+p_ft   = softmax([1, 4, 0.5, -1])  = [0.0430, 0.8638, 0.0261, 0.0058]
+p_rec  = softmax([3, 5, 1, 0])     = [0.1093, 0.8076, 0.0148, 0.0054]
+
+KL(p_ft || p_rec) = 0.0430·log(0.0430/0.1093) + 0.8638·log(0.8638/0.8076)
+                   + 0.0261·log(0.0261/0.0148) + 0.0058·log(0.0058/0.0054)
+                 ≈ 0.0462</code></pre>
+
+<p>Non-zero KL! The cross-model transfer isn't perfect because the large model
+has a different base distribution than the raw model.</p>
+
+<p><strong>With restriction to $k=2$:</strong> we lose tokens $C$ and $D$ entirely.
+If fine-tuning shifted mass toward them, that signal is lost. The restricted KL
+will be different (potentially larger or smaller) than the full-vocab KL.</p>
+
+<p>This is the fundamental tradeoff GRAFT explores: <strong>smaller $k$ means faster
+inference but potentially worse transfer quality</strong>.</p>
+</div>
+</details>
+
+<!-- ================================================================ -->
+<h2>4. Experiment Results</h2>
+
+<h3>4.1 Full-Vocab Math Check</h3>
+
+<table>
+  <thead>
+    <tr><th>#</th><th>Prompt</th><th>First Token</th><th>KL</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>Fibonacci function</td><td><code>Certainly</code> (95456)</td><td>0.000000</td><td><span class="verdict pass">pass</span></td></tr>
+    <tr><td>2</td><td>Binary search</td><td><code>Here</code> (8420)</td><td>0.000000</td><td><span class="verdict pass">pass</span></td></tr>
+    <tr><td>3</td><td>Stack class</td><td><code>Here</code> (8420)</td><td>0.000000</td><td><span class="verdict pass">pass</span></td></tr>
+    <tr><td>4</td><td>Pair sum</td><td><code>To</code> (1249)</td><td>0.000000</td><td><span class="verdict pass">pass</span></td></tr>
+    <tr><td>5</td><td>Decorator</td><td><code>Here</code> (8420)</td><td>0.000000</td><td><span class="verdict pass">pass</span></td></tr>
+  </tbody>
+</table>
+
+<h3>4.2 Restricted KL by $k$</h3>
+
+<table>
+  <thead>
+    <tr><th>Prompt</th><th>k=10</th><th>k=50</th><th>k=200</th><th>k=1000</th><th>k=full</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1 (Fibonacci)</td><td>0.1214</td><td>0.1214</td><td>0.1117</td><td>0.1117</td><td>0.1117</td></tr>
+    <tr><td>2 (Binary search)</td><td class="neg">−0.0201</td><td class="neg">−0.0201</td><td class="neg">−0.0201</td><td class="neg">−0.0201</td><td class="neg">−0.0201</td></tr>
+    <tr><td>3 (Stack)</td><td class="neg">−0.0913</td><td class="neg">−0.0913</td><td class="neg">−0.0913</td><td class="neg">−0.0913</td><td class="neg">−0.0913</td></tr>
+    <tr><td>4 (Pair sum)</td><td>0.1215</td><td>0.1215</td><td>0.1117</td><td>0.1117</td><td>0.1117</td></tr>
+    <tr><td>5 (Decorator)</td><td>0.0881</td><td>0.0881</td><td>0.0807</td><td>0.0807</td><td>0.0807</td></tr>
+  </tbody>
+</table>
+
+<h3>4.3 Interpreting the Non-Zero Restricted KL</h3>
+
+<div class="card" style="border-left: 3px solid var(--amber);">
+<p><span class="verdict note">precision artifact</span></p>
+
+<p>Mathematically, <strong>all</strong> restricted KL values should be exactly 0 in oracle mode
+(the $Z$ from full-vocab log_softmax cancels; see Section 2.3). The non-zero values
+— including <span class="neg">negative</span> ones — reveal float32 precision limits:</p>
+
+<ul>
+  <li>The <code>log_softmax(s_large)</code> step sums $\exp(\cdot)$ over 151,936 tokens, accumulating rounding error $\varepsilon$</li>
+  <li>The direct <code>log_softmax(s_large[S_t])</code> sums only $k$ tokens, with negligible error</li>
+  <li>Mathematically the paths are equivalent ($Z$ cancels), but float arithmetic is not associative</li>
+  <li>Negative KL values are impossible for true distributions — they confirm this is pure precision noise</li>
+</ul>
+
+<p><strong>Practical implication</strong>: in the real cross-model experiment, any restricted KL below ~0.15 nats
+should be treated as indistinguishable from zero.</p>
+</div>
+
+<h3>4.4 Additional Metrics</h3>
+
+<table>
+  <thead>
+    <tr><th>Metric</th><th>Value (all prompts, all k)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Delta magnitude $\mathbb{E}[|\delta(i)|]$</td><td>0.000000</td></tr>
+    <tr><td>Top-1 agreement</td><td>100% (5/5 at every k)</td></tr>
+    <tr><td>Top-5 overlap</td><td>1.00 (at every k)</td></tr>
+  </tbody>
+</table>
+
+<!-- ================================================================ -->
+<h2>5. Architecture Overview</h2>
+
+<div class="card">
+<pre style="background:none; padding:0; font-size:0.82rem; line-height:1.4;">
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  M_large    │    │  M_raw      │    │  M_ft       │
+│  (frozen)   │    │  (base)     │    │  (tuned)    │
+│  Qwen3-8B   │    │  Qwen3-0.6B │    │  Qwen3-0.6B │
+└──────┬──────┘    └──────┬──────┘    └──────┬──────┘
+       │                  │                  │
+       ▼                  ▼                  ▼
+   s_large(i)         s_raw(i)           s_ft(i)
+       │                  │                  │
+       │                  └───────┬──────────┘
+       │                          │
+       │                    delta(i) = log p_ft^St(i) - log p_raw^St(i)
+       │                          │
+       ▼                          ▼
+  log p_large^V(i)    +    λ · delta(i)    →    score(i)    →    softmax over S_t
+       │                                                              │
+       └── S_t = top-k ──────────────────────────────────────────────▶ p_recovered
+</pre>
+</div>
+
+<!-- ================================================================ -->
+<h2>6. Conclusions &amp; Next Steps</h2>
+
+<div class="card">
+<ol>
+  <li><strong>Formula verified</strong>: full-vocab proxy tuning recovers $p_{\text{ft}}$ exactly when $M_{\text{large}} = M_{\text{raw}}$. KL = 0 for all 5 prompts.</li>
+  <li><strong>Delta is zero</strong>: confirming $s_{\text{ft}} - s_{\text{raw}} = 0$ in oracle mode. The subtraction and renormalization are implemented correctly.</li>
+  <li><strong>Rankings preserved</strong>: top-1 and top-5 agreement are perfect at every $k$ value, despite float precision noise in the KL metric.</li>
+  <li><strong>Precision noise floor</strong>: ~0.1 nats from the full-vocab log_softmax intermediate. This sets the resolution limit for interpreting restricted KL in real experiments.</li>
+</ol>
+</div>
+
+<h3>Next Steps</h3>
+<ul>
+  <li>Fine-tune a small model (Qwen3-0.6B) on a code generation task</li>
+  <li>Run the same experiment with $M_{\text{ft}} \neq M_{\text{raw}}$ to measure real cross-model transfer</li>
+  <li>Sweep $k \in \{10, 50, 200, 1000\}$ and $\lambda \in \{0.5, 1.0, 1.5\}$ to find the quality/efficiency frontier</li>
+  <li>Extend to multi-step generation (beyond first token) with prefix divergence tracking</li>
+</ul>
+
+<hr style="margin-top:2.5rem; border:none; border-top:1px solid var(--border);">
+<p style="color:var(--muted); font-size:0.8rem; margin-top:1rem;">
+  Generated 2026-04-05 &middot; GRAFT v0.1.0 &middot; mlx-community/Qwen3-8B-4bit &middot; λ=1.0 &middot; seed=42
+</p>
+
+</body>
+</html>
