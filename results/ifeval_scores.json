@@ -1,0 +1,2142 @@
+[
+  {
+    "prompt_idx": 0,
+    "prompt": "Write a 300+ word summary of the wikipedia page \"https://en.wikipedia.org/wiki/R",
+    "num_instructions": 3,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:number_highlighted_sections",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:number_highlighted_sections",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:number_highlighted_sections",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 1,
+    "prompt": "I am planning a trip to Japan, and I would like thee to write an itinerary for m",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 2,
+    "prompt": "Write a resume for a fresh high school graduate who is seeking their first job. ",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_content:number_placeholders",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_content:number_placeholders",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_content:number_placeholders",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 3,
+    "prompt": "Write an email to my boss telling him that I am quitting. The email must contain",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "combination:repeat_prompt",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:title",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "combination:repeat_prompt",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:title",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "combination:repeat_prompt",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:title",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 4,
+    "prompt": "Given the sentence \"Two young boys with toy guns and horns.\" can you ask a quest",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 5,
+    "prompt": "Write a dialogue between two people, one is dressed up in a ball gown and the ot",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_format:number_bullet_lists",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_format:number_bullet_lists",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_format:number_bullet_lists",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 6,
+    "prompt": "Write a 2 paragraph critique of the following sentence in all capital letters, n",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "change_case:english_capital",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:multiple_sections",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:english_capital",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:multiple_sections",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "change_case:english_capital",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:multiple_sections",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 7,
+    "prompt": "Write me a resume for Matthias Algiers. Use words with all capital letters to hi",
+    "num_instructions": 3,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:capital_word_frequency",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "change_case:capital_word_frequency",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "startend:quotation",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:capital_word_frequency",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "change_case:capital_word_frequency",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "startend:quotation",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:capital_word_frequency",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "change_case:capital_word_frequency",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "startend:quotation",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 8,
+    "prompt": "Write a letter to a friend in all lowercase letters ask them to go and vote.",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 9,
+    "prompt": "Write a long email template that invites a group of participants to a meeting, w",
+    "num_instructions": 3,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:existence",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "punctuation:no_comma",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:existence",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "punctuation:no_comma",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:existence",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "punctuation:no_comma",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 10,
+    "prompt": "Write a blog post with 400 or more words about the benefits of sleeping in a ham",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 11,
+    "prompt": "Can you help me make an advertisement for a new product? It's a diaper that's de",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 12,
+    "prompt": "Write a story of exactly 2 paragraphs about a man who wakes up one day and reali",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "length_constraints:number_paragraphs",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "length_constraints:number_paragraphs",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "length_constraints:number_paragraphs",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 13,
+    "prompt": "Write a detailed review of the movie \"The Social Network\". Your entire response ",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 14,
+    "prompt": "Write a short blog post about a trip to Japan using less than 300 words.",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 15,
+    "prompt": "Please provide the names of 5 famous moms in JSON format. Please, use any intere",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 16,
+    "prompt": "What is a name that people call God? Please give exactly two different responses",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "combination:two_responses",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "combination:two_responses",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "combination:two_responses",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 17,
+    "prompt": "Write two jokes about rockets. Do not contain commas in your response. Separate ",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "combination:two_responses",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "combination:two_responses",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "combination:two_responses",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 18,
+    "prompt": "Are hamburgers sandwiches? Please respond using only the Kannada language, no ot",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "language:response_language",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "language:response_language",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "language:response_language",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 19,
+    "prompt": "make a tweet for playboy's twitter account without using capital letters. Includ",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:letter_frequency",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "keywords:letter_frequency",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "keywords:letter_frequency",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 20,
+    "prompt": "Write a poem about how I am missing my classes. The poem must have 4 sections ma",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:multiple_sections",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "startend:end_checker",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:multiple_sections",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "startend:end_checker",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:multiple_sections",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "startend:end_checker",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 21,
+    "prompt": "Given the sentence \"It is unclear how much of this money is actually being spent",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "startend:end_checker",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "startend:end_checker",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "startend:end_checker",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 22,
+    "prompt": "Write a short startup pitch for a new kind of ice cream called \"Sunnis ice cream",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:letter_frequency",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "combination:repeat_prompt",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "keywords:letter_frequency",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "combination:repeat_prompt",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "keywords:letter_frequency",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "combination:repeat_prompt",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 23,
+    "prompt": "Write a logic quiz for teenagers about a chesterfield. In your entire response, ",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:letter_frequency",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:letter_frequency",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:letter_frequency",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 24,
+    "prompt": "Write a 4 section resume for professional clown Phil Larkin. Each section should",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_format:multiple_sections",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_format:multiple_sections",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_format:multiple_sections",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 25,
+    "prompt": "Write the lyrics to a hit song by the rock band 'The Gifted and The Not Gifted'.",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "change_case:english_capital",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:forbidden_words",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:english_capital",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "keywords:forbidden_words",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "change_case:english_capital",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:forbidden_words",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 26,
+    "prompt": "Explain in French why it is important to eat healthy foods to heal the body, wit",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "keywords:forbidden_words",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:forbidden_words",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:forbidden_words",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 27,
+    "prompt": "Write a funny haiku about moms, containing keywords \"mom\" and \"mother\" in your r",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "combination:repeat_prompt",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "keywords:existence",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "combination:repeat_prompt",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "keywords:existence",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "combination:repeat_prompt",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "keywords:existence",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 28,
+    "prompt": "Rewrite the following statement to make it sound more formal, like a President o",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "keywords:forbidden_words",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:forbidden_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "keywords:forbidden_words",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 29,
+    "prompt": "What are the advantages and disadvantages of having supernatural powers? Make it",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 30,
+    "prompt": "Write a social media post for students of Islamic history about the hajj pilgrim",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "keywords:frequency",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "keywords:frequency",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "change_case:english_lowercase",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "keywords:frequency",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 31,
+    "prompt": "Write a rubric for how to evaluate the technical skills of a software engineer o",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "language:response_language",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "language:response_language",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "language:response_language",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 32,
+    "prompt": "Write a riddle for kids about auspices but make sure you don't use any commas.",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 33,
+    "prompt": "Write a template for a chat bot that takes a user's location and gives them the ",
+    "num_instructions": 3,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:letter_frequency",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "length_constraints:number_sentences",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:number_highlighted_sections",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:letter_frequency",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "length_constraints:number_sentences",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:number_highlighted_sections",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:letter_frequency",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "length_constraints:number_sentences",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:number_highlighted_sections",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 34,
+    "prompt": "Explain why people are grossed out by worms but not by eating a dead cow. Give e",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "combination:two_responses",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:title",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "combination:two_responses",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:title",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "combination:two_responses",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "detectable_format:title",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 35,
+    "prompt": "Can you give me two different formal alternatives to \"What's up? I'm going to th",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "punctuation:no_comma",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 36,
+    "prompt": "What happened when the Tang dynasty of China was in power? Make sure to use the ",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:frequency",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:frequency",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:frequency",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:frequency",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "keywords:frequency",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:frequency",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 37,
+    "prompt": "What sentiments existed in the Croatian and Serbian nations towards the Austrian",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "startend:quotation",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "startend:quotation",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "startend:quotation",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 38,
+    "prompt": "Write an ad copy for a new product, a digital photo frame that connects to your ",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 39,
+    "prompt": "Which one is a better brand for sneakers: Prada or Nike? Your entire response sh",
+    "num_instructions": 3,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "change_case:english_capital",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "detectable_content:postscript",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:frequency",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "change_case:english_capital",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "detectable_content:postscript",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:frequency",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "change_case:english_capital",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "detectable_content:postscript",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:frequency",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 40,
+    "prompt": "Write a blog post about the history of the internet and how it has impacted our ",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "startend:quotation",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "startend:quotation",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "startend:quotation",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 41,
+    "prompt": "Write a poem about two people who meet in a coffee shop and end your entire resp",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "startend:end_checker",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "startend:end_checker",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "startend:end_checker",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 42,
+    "prompt": "How many feet off the ground was the tallest skyscraper in the world in 2000? Pl",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "startend:end_checker",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:frequency",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "startend:end_checker",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:frequency",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "startend:end_checker",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:frequency",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 43,
+    "prompt": "Write an advertisement for a new line of comfortable armchairs designed to withs",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "length_constraints:number_paragraphs",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "length_constraints:number_paragraphs",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "length_constraints:number_paragraphs",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 44,
+    "prompt": "Write a funny post for teenagers about a restaurant called \"Buena Onda\" which se",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:number_highlighted_sections",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:existence",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_format:number_highlighted_sections",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "keywords:existence",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_format:number_highlighted_sections",
+          "pass": true,
+          "skipped": false
+        },
+        {
+          "id": "keywords:existence",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 45,
+    "prompt": "Can you give me a nickname for Stafford? Please use JSON format and do not say t",
+    "num_instructions": 2,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:forbidden_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:forbidden_words",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "detectable_format:json_format",
+          "pass": false,
+          "skipped": false
+        },
+        {
+          "id": "keywords:forbidden_words",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 46,
+    "prompt": "Write me a template for a product description in the form of a poem and end it w",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_content:postscript",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_content:postscript",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "detectable_content:postscript",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 47,
+    "prompt": "\"The man was arrested for stealing a car. He was later released on bail.\" Expand",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "length_constraints:number_paragraphs",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "length_constraints:number_paragraphs",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": true,
+      "instructions": [
+        {
+          "id": "length_constraints:number_paragraphs",
+          "pass": true,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 48,
+    "prompt": "Write a poem that's at least 350 words about the beauty of eucalyptus trees and ",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  },
+  {
+    "prompt_idx": 49,
+    "prompt": "I have a dime. What can I do with this dime? Give me advice in the style of a Pr",
+    "num_instructions": 1,
+    "base": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "delta": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    },
+    "instruct": {
+      "prompt_pass": false,
+      "instructions": [
+        {
+          "id": "length_constraints:number_words",
+          "pass": false,
+          "skipped": false
+        }
+      ]
+    }
+  }
+]
