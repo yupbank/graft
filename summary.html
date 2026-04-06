@@ -784,7 +784,8 @@ using only the 8B instruct delta. It beats both instruct models on change_case, 
 <table>
   <thead><tr><th>Model</th><th>Pass</th><th>Accuracy</th></tr></thead>
   <tbody>
-    <tr><td>14B base (no delta)</td><td>222/541</td><td>41.0%</td></tr>
+    <tr><td>8B base</td><td>206/541</td><td>38.1%</td></tr>
+    <tr><td>14B base</td><td>222/541</td><td>41.0%</td></tr>
     <tr><td><strong>Delta-steered 14B (GRAFT)</strong></td><td><strong>323/541</strong></td><td><strong>59.7%</strong></td></tr>
     <tr><td>8B instruct</td><td>334/541</td><td>61.7%</td></tr>
     <tr><td>14B instruct</td><td>336/541</td><td>62.1%</td></tr>
@@ -800,6 +801,7 @@ using only the 8B instruct delta &mdash; no 14B fine-tuning.</p>
 <table>
   <thead><tr><th>Model</th><th>Pass</th><th>Accuracy</th></tr></thead>
   <tbody>
+    <tr><td>8B base</td><td>421/834</td><td>50.5%</td></tr>
     <tr><td>14B base</td><td>440/834</td><td>52.8%</td></tr>
     <tr><td><strong>Delta-steered 14B (GRAFT)</strong></td><td><strong>587/834</strong></td><td><strong>70.4%</strong></td></tr>
     <tr><td>8B instruct</td><td>598/834</td><td>71.7%</td></tr>
@@ -809,18 +811,18 @@ using only the 8B instruct delta &mdash; no 14B fine-tuning.</p>
 
 <h3>11.4 Per-Category Breakdown</h3>
 
-<table>
-  <thead><tr><th>Category</th><th>Total</th><th>14B base</th><th>Delta</th><th>8B inst</th><th>14B inst</th></tr></thead>
+<table style="font-size:0.85rem">
+  <thead><tr><th>Category</th><th>N</th><th>8B base</th><th>14B base</th><th>Delta</th><th>8B inst</th><th>14B inst</th></tr></thead>
   <tbody>
-    <tr><td>change_case</td><td>89</td><td>38 (43%)</td><td style="color:var(--green)"><strong>81 (91%)</strong></td><td>74 (83%)</td><td>78 (88%)</td></tr>
-    <tr><td>punctuation</td><td>66</td><td>10 (15%)</td><td style="color:var(--green)"><strong>65 (98%)</strong></td><td>64 (97%)</td><td>65 (98%)</td></tr>
-    <tr><td>keywords</td><td>163</td><td>91 (56%)</td><td><strong>121 (74%)</strong></td><td>118 (72%)</td><td>122 (75%)</td></tr>
-    <tr><td>combination</td><td>65</td><td>55 (85%)</td><td style="color:var(--green)"><strong>62 (95%)</strong></td><td>61 (94%)</td><td>59 (91%)</td></tr>
-    <tr><td>detectable_content</td><td>53</td><td>24 (45%)</td><td>34 (64%)</td><td>34 (64%)</td><td>33 (62%)</td></tr>
-    <tr><td>detectable_format</td><td>157</td><td>91 (58%)</td><td>96 (61%)</td><td>97 (62%)</td><td>95 (61%)</td></tr>
-    <tr><td>language</td><td>31</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td></tr>
-    <tr><td>length_constraints</td><td>143</td><td>59 (41%)</td><td>55 (38%)</td><td>78 (55%)</td><td>78 (55%)</td></tr>
-    <tr><td>startend</td><td>67</td><td>41 (61%)</td><td><strong>42 (63%)</strong></td><td>41 (61%)</td><td>41 (61%)</td></tr>
+    <tr><td>change_case</td><td>89</td><td>29 (33%)</td><td>38 (43%)</td><td style="color:var(--green)"><strong>81 (91%)</strong></td><td>74 (83%)</td><td>78 (88%)</td></tr>
+    <tr><td>punctuation</td><td>66</td><td>16 (24%)</td><td>10 (15%)</td><td style="color:var(--green)"><strong>65 (98%)</strong></td><td>64 (97%)</td><td>65 (98%)</td></tr>
+    <tr><td>keywords</td><td>163</td><td>94 (58%)</td><td>91 (56%)</td><td><strong>121 (74%)</strong></td><td>118 (72%)</td><td>122 (75%)</td></tr>
+    <tr><td>combination</td><td>65</td><td>47 (72%)</td><td>55 (85%)</td><td style="color:var(--green)"><strong>62 (95%)</strong></td><td>61 (94%)</td><td>59 (91%)</td></tr>
+    <tr><td>detectable_content</td><td>53</td><td>27 (51%)</td><td>24 (45%)</td><td><strong>34 (64%)</strong></td><td>34 (64%)</td><td>33 (62%)</td></tr>
+    <tr><td>detectable_format</td><td>157</td><td>81 (52%)</td><td>91 (58%)</td><td>96 (61%)</td><td>97 (62%)</td><td>95 (61%)</td></tr>
+    <tr><td>language</td><td>31</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td></tr>
+    <tr><td>length_constraints</td><td>143</td><td>55 (38%)</td><td>59 (41%)</td><td>55 (38%)</td><td>78 (55%)</td><td>78 (55%)</td></tr>
+    <tr><td>startend</td><td>67</td><td>41 (61%)</td><td>41 (61%)</td><td><strong>42 (63%)</strong></td><td>41 (61%)</td><td>41 (61%)</td></tr>
   </tbody>
 </table>
 

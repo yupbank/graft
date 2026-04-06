@@ -408,6 +408,7 @@ against the verifiable constraints (keyword presence, word count, formatting, ca
 
 | Model | Accuracy |
 |-------|----------|
+| 8B base | 206/541 (38.1%) |
 | 14B base (no delta) | 222/541 (41.0%) |
 | Delta-steered 14B | **323/541 (59.7%)** |
 | 8B instruct | 334/541 (61.7%) |
@@ -417,6 +418,7 @@ against the verifiable constraints (keyword presence, word count, formatting, ca
 
 | Model | Accuracy |
 |-------|----------|
+| 8B base | 421/834 (50.5%) |
 | 14B base | 440/834 (52.8%) |
 | Delta-steered 14B | **587/834 (70.4%)** |
 | 8B instruct | 598/834 (71.7%) |
@@ -428,17 +430,17 @@ performance** (59.7/62.1) while using only the 8B instruct delta — no 14B fine
 
 **Per-category breakdown:**
 
-| Category | Total | Base | Delta | 8B inst | 14B inst |
-|----------|-------|------|-------|---------|----------|
-| change_case | 89 | 38 (43%) | **81 (91%)** | 74 (83%) |
-| punctuation | 66 | 10 (15%) | **65 (98%)** | 64 (97%) |
-| keywords | 163 | 91 (56%) | **121 (74%)** | 118 (72%) | 122 (75%) |
-| combination | 65 | 55 (85%) | **62 (95%)** | 61 (94%) | 59 (91%) |
-| detectable_content | 53 | 24 (45%) | 34 (64%) | 34 (64%) | 33 (62%) |
-| detectable_format | 157 | 91 (58%) | 96 (61%) | 97 (62%) | 95 (61%) |
-| language | 31 | 31 (100%) | 31 (100%) | 31 (100%) | 31 (100%) |
-| length_constraints | 143 | 59 (41%) | 55 (38%) | 78 (55%) | 78 (55%) |
-| startend | 67 | 41 (61%) | 42 (63%) | 41 (61%) | 41 (61%) |
+| Category | N | 8B base | 14B base | Delta | 8B inst | 14B inst |
+|----------|---|---------|----------|-------|---------|----------|
+| change_case | 89 | 29 (33%) | 38 (43%) | **81 (91%)** | 74 (83%) | 78 (88%) |
+| punctuation | 66 | 16 (24%) | 10 (15%) | **65 (98%)** | 64 (97%) | 65 (98%) |
+| keywords | 163 | 94 (58%) | 91 (56%) | **121 (74%)** | 118 (72%) | 122 (75%) |
+| combination | 65 | 47 (72%) | 55 (85%) | **62 (95%)** | 61 (94%) | 59 (91%) |
+| detectable_content | 53 | 27 (51%) | 24 (45%) | 34 (64%) | 34 (64%) | 33 (62%) |
+| detectable_format | 157 | 81 (52%) | 91 (58%) | 96 (61%) | 97 (62%) | 95 (61%) |
+| language | 31 | 31 (100%) | 31 (100%) | 31 (100%) | 31 (100%) | 31 (100%) |
+| length_constraints | 143 | 55 (38%) | 59 (41%) | 55 (38%) | 78 (55%) | 78 (55%) |
+| startend | 67 | 41 (61%) | 41 (61%) | 42 (63%) | 41 (61%) | 41 (61%) |
 
 The delta-steered model **beats both instruct models** on several categories:
 - **change_case**: delta 91% vs 8B-inst 83% vs 14B-inst 88%
