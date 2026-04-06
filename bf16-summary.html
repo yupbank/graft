@@ -106,7 +106,7 @@ MathJax = {
 <p class="subtitle">
   Gated Restricted Adaptation via Fine-Tuning Transfer<br>
   Run: 2026-04-06 &middot; Precision: <code>bfloat16</code> &middot; mlx-lm 0.31.1 &middot; Python 3.11.13<br>
-  Models: <code>Qwen3-8B-Base-bf16</code>, <code>Qwen3-8B-Instruct-bf16</code>, <code>Qwen3-14B-Base-bf16</code>
+  Models: <code>Qwen3-8B-Base-bf16</code>, <code>Qwen3-8B-Instruct-bf16</code>, <code>Qwen3-14B-Base-bf16</code>, <code>Qwen3-14B-Instruct-bf16</code>
 </p>
 
 <!-- ================================================================ -->
@@ -114,18 +114,38 @@ MathJax = {
 
 <div class="card">
 <p>We re-ran the complete GRAFT pipeline using <strong>bfloat16 (full precision)</strong> models
-instead of 4-bit quantized ones. bf16 eliminates quantization noise and gives a cleaner
-measurement of how well the proxy-tuning delta transfers across model sizes.</p>
+instead of 4-bit quantized ones, and compared against the <strong>proxy-tuning baseline</strong>
+(Liu et al. 2024). We also evaluated all four standalone models (8B base, 8B instruct,
+14B base, 14B instruct) for a complete picture.</p>
 
-<p><strong>Key headline</strong>: Delta-steered 14B base achieves <strong>57.1% IFEval strict accuracy</strong>
-on all 541 prompts &mdash; up from 40.7% for the raw 14B base, closing <strong>78%</strong> of the gap
-to the 8B instruct ceiling (61.6%). With zero fine-tuning of the 14B model.</p>
+<p><strong>Key headline</strong>: Both decoding-time methods dramatically improve the 14B base
+without any fine-tuning. Proxy-tuning (full-vocab) achieves <strong>59.3%</strong> and GRAFT
+(restricted, k=50) achieves <strong>57.1%</strong>, compared to the 14B base at 40.7% and the
+14B instruct ceiling at 62.7%.</p>
+</div>
+
+<div class="card">
+<h3>Full IFEval Leaderboard (541 prompts, bf16)</h3>
+<table>
+  <tr><th>Model</th><th>Prompt-level strict</th><th>Instruction-level</th><th>Notes</th></tr>
+  <tr><td>14B base</td><td>40.7%</td><td>51.9%</td><td>Floor</td></tr>
+  <tr><td>8B base</td><td>42.7%</td><td>54.1%</td><td>Smaller model, no tuning</td></tr>
+  <tr><td><strong>GRAFT (restricted delta, k=50)</strong></td><td><strong>57.1%</strong></td><td><strong>68.2%</strong></td><td>Our method</td></tr>
+  <tr><td><strong>Proxy-tuning (full-vocab)</strong></td><td><strong>59.3%</strong></td><td><strong>70.1%</strong></td><td>Liu et al. 2024 baseline</td></tr>
+  <tr><td>8B instruct</td><td>61.6%</td><td>71.7%</td><td>Small expert alone</td></tr>
+  <tr><td>14B instruct</td><td>62.7%</td><td>73.0%</td><td>Ceiling (true tuning)</td></tr>
+</table>
 </div>
 
 <div class="grid-4">
   <div class="card metric-box">
-    <div class="value" style="color:var(--green)">57.1%</div>
-    <div class="label">Delta-steered IFEval</div>
+    <div class="value" style="color:var(--green)">59.3%</div>
+    <div class="label">Proxy-tuning IFEval</div>
+    <div class="delta">+18.6pp vs base</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value" style="color:var(--accent)">57.1%</div>
+    <div class="label">GRAFT IFEval</div>
     <div class="delta">+16.4pp vs base</div>
   </div>
   <div class="card metric-box">
@@ -134,14 +154,9 @@ to the 8B instruct ceiling (61.6%). With zero fine-tuning of the 14B model.</p>
     <div class="delta">+3.7pp vs 4-bit</div>
   </div>
   <div class="card metric-box">
-    <div class="value">0.027</div>
-    <div class="label">JS(ft, recovered)</div>
-    <div class="delta">-29% vs 4-bit</div>
-  </div>
-  <div class="card metric-box">
-    <div class="value">~0.03</div>
-    <div class="label">Precision noise floor</div>
-    <div class="delta">-70% vs 4-bit</div>
+    <div class="value">62.7%</div>
+    <div class="label">14B instruct (ceiling)</div>
+    <div class="delta">True tuning target</div>
   </div>
 </div>
 
@@ -392,7 +407,99 @@ Three modes: 14B base alone, delta-steered 14B, 8B instruct alone.</p>
 </ul>
 
 <!-- ================================================================ -->
-<h2>7. bf16 vs 4-bit Comparison</h2>
+<h2>7. Standalone Model Baselines</h2>
+
+<p>For a complete picture, we evaluated all four models independently on IFEval (541 prompts, greedy decoding, max 256 tokens).</p>
+
+<table>
+  <tr><th>Model</th><th>Prompt-level strict</th><th>Instruction-level</th></tr>
+  <tr><td>Qwen3-8B-Base-bf16</td><td>42.7% (231/541)</td><td>54.1% (451/834)</td></tr>
+  <tr><td>Qwen3-8B-Instruct-bf16</td><td>61.6% (333/541)</td><td>71.7% (598/834)</td></tr>
+  <tr><td>Qwen3-14B-Base-bf16</td><td>40.7% (220/541)</td><td>51.9% (433/834)</td></tr>
+  <tr><td>Qwen3-14B-Instruct-bf16</td><td>62.7% (339/541)</td><td>73.0% (609/834)</td></tr>
+</table>
+
+<p>Observations:</p>
+<ul>
+  <li>The 8B base (42.7%) slightly outperforms the 14B base (40.7%) &mdash; likely because the 8B base produces shorter, more direct completions that happen to satisfy some constraints</li>
+  <li>Instruction tuning provides a ~20pp boost at both scales (8B: +18.9pp, 14B: +22.0pp)</li>
+  <li>The 14B instruct (62.7%) only slightly exceeds the 8B instruct (61.6%) &mdash; suggesting diminishing returns from scale alone on IFEval's constraint-following tasks</li>
+</ul>
+
+<h3>Per-category comparison (all 4 models)</h3>
+
+<table>
+  <tr><th>Category</th><th>8B base</th><th>8B inst</th><th>14B base</th><th>14B inst</th></tr>
+  <tr><td>change_case</td><td>40%</td><td>85%</td><td>37%</td><td>89%</td></tr>
+  <tr><td>combination</td><td>80%</td><td>89%</td><td>88%</td><td>89%</td></tr>
+  <tr><td>detectable_content</td><td>51%</td><td>55%</td><td>45%</td><td>62%</td></tr>
+  <tr><td>detectable_format</td><td>49%</td><td>61%</td><td>55%</td><td>63%</td></tr>
+  <tr><td>keywords</td><td>60%</td><td>75%</td><td>54%</td><td>77%</td></tr>
+  <tr><td>language</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+  <tr><td>length_constraints</td><td>45%</td><td>56%</td><td>44%</td><td>55%</td></tr>
+  <tr><td>punctuation</td><td>38%</td><td>98%</td><td>14%</td><td>98%</td></tr>
+  <tr><td>startend</td><td>61%</td><td>61%</td><td>61%</td><td>61%</td></tr>
+</table>
+
+<!-- ================================================================ -->
+<h2>8. GRAFT vs Proxy-Tuning Baseline</h2>
+
+<p>We compare GRAFT (restricted renormalized delta over top-k candidates) against the
+original <strong>proxy-tuning</strong> method (Liu et al. 2024), which applies a full-vocabulary
+raw logit offset:</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Proxy-tuning (Liu et al. 2024)</h3>
+    <div class="math-block">
+    $$\text{score}(i) = s_{\text{large}}(i) + s_{\text{ft}}(i) - s_{\text{raw}}(i) \quad \forall\, i \in V$$
+    </div>
+    <p>Full vocabulary (151,936 tokens), raw logits, no renormalization.</p>
+  </div>
+  <div class="card">
+    <h3>GRAFT (our method)</h3>
+    <div class="math-block">
+    $$\text{score}(i) = \log p_{\text{large}}^V(i) + \lambda \cdot \delta(i) \quad i \in S_t$$
+    </div>
+    <p>Restricted to top-k (k=50), renormalized log-probabilities for delta.</p>
+  </div>
+</div>
+
+<h3>IFEval results (541 prompts, bf16)</h3>
+
+<table>
+  <tr><th>Method</th><th>Prompt-level strict</th><th>Instruction-level</th><th>Gap closed (vs 14B-inst)</th></tr>
+  <tr><td>14B base (floor)</td><td>40.7%</td><td>51.9%</td><td>0%</td></tr>
+  <tr><td><strong>GRAFT (k=50)</strong></td><td><strong>57.1%</strong></td><td><strong>68.2%</strong></td><td><strong>75%</strong></td></tr>
+  <tr><td><strong>Proxy-tuning</strong></td><td><strong>59.3%</strong></td><td><strong>70.1%</strong></td><td><strong>85%</strong></td></tr>
+  <tr><td>14B instruct (ceiling)</td><td>62.7%</td><td>73.0%</td><td>100%</td></tr>
+</table>
+
+<h3>Per-category head-to-head</h3>
+
+<table>
+  <tr><th>Category</th><th>14B base</th><th>GRAFT</th><th>Proxy-tuning</th><th>14B inst</th><th>Winner</th></tr>
+  <tr><td>change_case</td><td>37%</td><td class="highlight-better"><strong>92%</strong></td><td>84%</td><td>89%</td><td>GRAFT</td></tr>
+  <tr><td>punctuation</td><td>14%</td><td>91%</td><td class="highlight-better"><strong>97%</strong></td><td>98%</td><td>Proxy</td></tr>
+  <tr><td>keywords</td><td>54%</td><td>71%</td><td class="highlight-better"><strong>74%</strong></td><td>77%</td><td>Proxy</td></tr>
+  <tr><td>detectable_format</td><td>55%</td><td>61%</td><td>59%</td><td>63%</td><td>GRAFT</td></tr>
+  <tr><td>combination</td><td>88%</td><td><strong>91%</strong></td><td>89%</td><td>89%</td><td>GRAFT</td></tr>
+  <tr><td>length_constraints</td><td>44%</td><td>40%</td><td class="highlight-better"><strong>52%</strong></td><td>55%</td><td>Proxy</td></tr>
+  <tr><td>detectable_content</td><td>45%</td><td>53%</td><td>51%</td><td>62%</td><td>GRAFT</td></tr>
+  <tr><td>startend</td><td>61%</td><td>63%</td><td>61%</td><td>61%</td><td>GRAFT</td></tr>
+  <tr><td>language</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>Tie</td></tr>
+</table>
+
+<p><strong>Analysis</strong>:</p>
+<ul>
+  <li><strong>Proxy-tuning wins overall</strong> by 2.2pp (59.3% vs 57.1%). The full-vocabulary approach preserves more of the delta signal, especially for length constraints (+12pp) and punctuation (+6pp).</li>
+  <li><strong>GRAFT wins on change_case</strong> (92% vs 84%) and several other categories. The restriction to top-k seems to focus the delta more effectively for case-transformation tasks.</li>
+  <li><strong>Both methods dramatically outperform the 14B base</strong> (+16-19pp) with zero fine-tuning.</li>
+  <li><strong>GRAFT's advantage</strong>: at inference time, it only needs logits for k=50 tokens from the small models, making it feasible for black-box APIs that only expose top-k log-probs. Proxy-tuning requires full-vocabulary logits from all models.</li>
+</ul>
+
+<!-- ================================================================ -->
+<h2>9. bf16 vs 4-bit Comparison</h2>
 
 <p>Head-to-head comparison of bf16 full-precision vs 4-bit quantized results.</p>
 
@@ -451,27 +558,31 @@ the gap &mdash; still very strong transfer with zero fine-tuning of the 14B mode
 </ul>
 
 <!-- ================================================================ -->
-<h2>8. Conclusions</h2>
+<h2>10. Conclusions</h2>
 
 <div class="card">
-<p>Running GRAFT with bf16 models confirms and strengthens the 4-bit findings:</p>
+<p>Running GRAFT and proxy-tuning with bf16 models across all 541 IFEval prompts, with standalone baselines for all four models:</p>
 
 <ol>
-  <li><strong>Formula is correct</strong> (Step 1): Full-vocab KL = 0 exactly in oracle mode. bf16 reduces restricted KL precision noise by 5.5x.</li>
-  <li><strong>Delta carries stronger signal at bf16</strong> (Step 2): Mean |$\delta$| is 17% larger, meaning quantization compresses the fine-tuning information.</li>
-  <li><strong>Cross-model transfer improves</strong> (Step 3): JS(ft, recovered) drops from 0.105 to 0.016 &mdash; an 85% reduction in distributional distance.</li>
-  <li><strong>At scale</strong> (541 IFEval): 89.5% top-1 match (was 85.8%), 95.7% at k=10 (was 92.1%).</li>
-  <li><strong>Full generation</strong>: 57.1% IFEval accuracy vs 40.7% base &mdash; a <strong>16.4pp improvement</strong> with zero fine-tuning, closing 78% of the gap to the instruct ceiling.</li>
-  <li><strong>Delta beats instruct on some categories</strong>: change_case (92% vs 85%), combination (91% vs 89%), startend (63% vs 61%) &mdash; the 14B base's capacity enhances the delta signal.</li>
+  <li><strong>Both decoding-time methods work</strong>: Proxy-tuning achieves 59.3% and GRAFT achieves 57.1%, both dramatically above the 14B base (40.7%), with zero fine-tuning of the large model.</li>
+  <li><strong>Proxy-tuning closes 85% of the gap</strong> to the 14B instruct ceiling (62.7%), while GRAFT closes 75%. The full-vocabulary approach preserves more signal overall.</li>
+  <li><strong>GRAFT excels in specific categories</strong>: change_case (92% vs 84%), combination (91% vs 89%), and detectable_format (61% vs 59%). The restriction acts as beneficial regularization for certain constraint types.</li>
+  <li><strong>GRAFT is more practical for black-box settings</strong>: it only needs top-k logits (k=50) from the small models, making it compatible with APIs that expose limited log-probabilities. Proxy-tuning requires full-vocabulary logits from all three models.</li>
+  <li><strong>bf16 improves both methods</strong>: 89.5% first-token match (was 85.8% with 4-bit), 5.5x lower precision noise, 17% stronger delta signal.</li>
+  <li><strong>Scale helps</strong>: 14B instruct (62.7%) slightly outperforms 8B instruct (61.6%), confirming that decoding-time methods benefit from the larger model's capacity.</li>
 </ol>
 
-<p>The proxy tuning formula:</p>
+<h3>The two formulas</h3>
 
-$$p_{\text{steered}} = \text{softmax}\bigl(s_{\text{large}} + \lambda \cdot (\log p_{\text{ft}}^{S_t} - \log p_{\text{base}}^{S_t})\bigr)$$
+<p><strong>Proxy-tuning</strong> (Liu et al. 2024):</p>
+$$p_{\text{proxy}} = \text{softmax}\bigl(s_{\text{large}} + s_{\text{ft}} - s_{\text{raw}}\bigr) \quad \text{over } V$$
 
-<p>works better with bf16 because the delta $(\log p_{\text{ft}} - \log p_{\text{base}})$ is computed with
-higher fidelity, and the large model's logit landscape is more nuanced. The tradeoff is memory and
-speed, but for applications where quality matters more than latency, bf16 is the clear winner.</p>
+<p><strong>GRAFT</strong> (restricted renormalized delta):</p>
+$$p_{\text{graft}} = \text{softmax}\bigl(\log p_{\text{large}}^V + \lambda \cdot (\log p_{\text{ft}}^{S_t} - \log p_{\text{raw}}^{S_t})\bigr) \quad \text{over } S_t = \text{top-}k(s_{\text{large}})$$
+
+<p>Proxy-tuning wins on aggregate accuracy; GRAFT wins on practicality and targeted categories.
+Both demonstrate that <strong>instruction-following behavior can be transferred across model sizes
+at decoding time</strong>, with no parameter updates to the large model.</p>
 </div>
 
 </body>
