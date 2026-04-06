@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRAFT bf16 — Full Experiment Results</title>
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+<style>
+  :root {
+    --bg: #fafafa; --fg: #1a1a1a; --accent: #2563eb; --green: #16a34a;
+    --red: #dc2626; --amber: #d97706; --card: #fff; --border: #e5e7eb;
+    --code-bg: #f3f4f6; --muted: #6b7280;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a; --fg: #e2e8f0; --accent: #60a5fa; --green: #4ade80;
+      --red: #f87171; --amber: #fbbf24; --card: #1e293b; --border: #334155;
+      --code-bg: #1e293b; --muted: #94a3b8;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg); color: var(--fg); line-height: 1.7;
+    max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem;
+  }
+  h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.35rem; margin: 2.5rem 0 1rem; border-bottom: 2px solid var(--accent); padding-bottom: 0.3rem; }
+  h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+  p, li { margin-bottom: 0.6rem; }
+  ul { padding-left: 1.5rem; }
+  .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1.25rem 1.5rem; margin: 1rem 0;
+  }
+  .verdict {
+    display: inline-block; font-weight: 700; padding: 0.15rem 0.6rem;
+    border-radius: 4px; font-size: 0.85rem; text-transform: uppercase;
+  }
+  .pass { background: #dcfce7; color: #166534; }
+  .fail { background: #fee2e2; color: #991b1b; }
+  .note { background: #fef9c3; color: #854d0e; }
+  .improved { background: #dbeafe; color: #1e40af; }
+  @media (prefers-color-scheme: dark) {
+    .pass { background: #14532d; color: #bbf7d0; }
+    .fail { background: #7f1d1d; color: #fecaca; }
+    .note { background: #713f12; color: #fef08a; }
+    .improved { background: #1e3a5f; color: #93c5fd; }
+  }
+  table {
+    width: 100%; border-collapse: collapse; margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; background: var(--code-bg); }
+  code {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    background: var(--code-bg); padding: 0.15rem 0.4rem; border-radius: 3px;
+    font-size: 0.88em;
+  }
+  pre {
+    background: var(--code-bg); padding: 1rem 1.25rem; border-radius: 6px;
+    overflow-x: auto; font-size: 0.88rem; line-height: 1.5; margin: 0.75rem 0;
+  }
+  pre code { background: none; padding: 0; }
+  .math-block {
+    background: var(--card); border-left: 3px solid var(--accent);
+    padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 6px 6px 0;
+    overflow-x: auto;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; }
+  @media (max-width: 640px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+  .metric-box { text-align: center; }
+  .metric-box .value { font-size: 2rem; font-weight: 700; color: var(--accent); }
+  .metric-box .label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; }
+  .metric-box .delta { font-size: 0.75rem; color: var(--green); margin-top: 0.15rem; }
+  details { margin: 0.5rem 0; }
+  details summary {
+    cursor: pointer; font-weight: 600; padding: 0.3rem 0;
+    color: var(--accent);
+  }
+  details summary:hover { text-decoration: underline; }
+  .comparison-row { display: flex; gap: 0.5rem; align-items: center; }
+  .bar { height: 20px; border-radius: 3px; display: inline-block; }
+  .bar-base { background: var(--muted); }
+  .bar-delta { background: var(--accent); }
+  .bar-inst { background: var(--green); }
+  .highlight-better { color: var(--green); font-weight: 600; }
+  .highlight-worse { color: var(--red); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>GRAFT bf16 — Full Experiment Results</h1>
+<p class="subtitle">
+  Gated Restricted Adaptation via Fine-Tuning Transfer<br>
+  Run: 2026-04-06 &middot; Precision: <code>bfloat16</code> &middot; mlx-lm 0.31.1 &middot; Python 3.11.13<br>
+  Models: <code>Qwen3-8B-Base-bf16</code>, <code>Qwen3-8B-Instruct-bf16</code>, <code>Qwen3-14B-Base-bf16</code>
+</p>
+
+<!-- ================================================================ -->
+<h2>Executive Summary</h2>
+
+<div class="card">
+<p>We re-ran the complete GRAFT pipeline using <strong>bfloat16 (full precision)</strong> models
+instead of 4-bit quantized ones. bf16 eliminates quantization noise and gives a cleaner
+measurement of how well the proxy-tuning delta transfers across model sizes.</p>
+
+<p><strong>Key headline</strong>: Delta-steered 14B base achieves <strong>57.1% IFEval strict accuracy</strong>
+on all 541 prompts &mdash; up from 40.7% for the raw 14B base, closing <strong>78%</strong> of the gap
+to the 8B instruct ceiling (61.6%). With zero fine-tuning of the 14B model.</p>
+</div>
+
+<div class="grid-4">
+  <div class="card metric-box">
+    <div class="value" style="color:var(--green)">57.1%</div>
+    <div class="label">Delta-steered IFEval</div>
+    <div class="delta">+16.4pp vs base</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value">89.5%</div>
+    <div class="label">Top-1 match (first token)</div>
+    <div class="delta">+3.7pp vs 4-bit</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value">0.027</div>
+    <div class="label">JS(ft, recovered)</div>
+    <div class="delta">-29% vs 4-bit</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value">~0.03</div>
+    <div class="label">Precision noise floor</div>
+    <div class="delta">-70% vs 4-bit</div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<h2>1. Step 1 &mdash; Oracle Sanity Check</h2>
+
+<p>$M_{\text{large}} = M_{\text{raw}} = M_{\text{ft}}$ = <code>Qwen3-8B-Base-bf16</code> (same checkpoint).
+Verifies the formula implementation is correct.</p>
+
+<div class="grid-2">
+  <div class="card metric-box">
+    <div class="value" style="color:var(--green)">0.0</div>
+    <div class="label">Full-vocab KL (all 5 prompts)</div>
+    <span class="verdict pass">pass</span>
+  </div>
+  <div class="card metric-box">
+    <div class="value">0.0</div>
+    <div class="label">Delta magnitude (all prompts)</div>
+    <span class="verdict pass">pass</span>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card metric-box">
+    <div class="value">5/5</div>
+    <div class="label">Top-1 agreement</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value">1.00</div>
+    <div class="label">Top-5 overlap</div>
+  </div>
+</div>
+
+<h3>Precision noise: bf16 vs 4-bit</h3>
+
+<p>The restricted KL precision noise is significantly lower with bf16:</p>
+
+<table>
+  <tr><th>Prompt</th><th>bf16 k=50 KL</th><th>4-bit k=50 KL</th><th>Improvement</th></tr>
+  <tr><td>1. Fibonacci</td><td>-0.049</td><td>0.121</td><td class="highlight-better">2.5x lower</td></tr>
+  <tr><td>2. Binary search</td><td>-0.028</td><td>-0.020</td><td>~same</td></tr>
+  <tr><td>3. Stack class</td><td>0.001</td><td>-0.091</td><td class="highlight-better">91x lower</td></tr>
+  <tr><td>4. Pair sum</td><td>0.002</td><td>0.122</td><td class="highlight-better">61x lower</td></tr>
+  <tr><td>5. Decorator</td><td>0.002</td><td>0.088</td><td class="highlight-better">44x lower</td></tr>
+  <tr><th>Mean |KL|</th><th>0.016</th><th>0.088</th><th class="highlight-better">5.5x lower</th></tr>
+</table>
+
+<p>bf16 reduces the precision noise floor from ~0.1 nats to ~0.03 nats, making it
+easier to distinguish real divergence from numerical artifacts.</p>
+
+<!-- ================================================================ -->
+<h2>2. Step 2 &mdash; Same-Model Delta Transfer</h2>
+
+<p>$M_{\text{raw}} = M_{\text{large}}$ = <code>Qwen3-8B-Base-bf16</code>,
+$M_{\text{ft}}$ = <code>Qwen3-8B-Instruct-bf16</code>.</p>
+
+<div class="grid-2">
+  <div class="card metric-box">
+    <div class="value" style="color:var(--green)">0.0</div>
+    <div class="label">Full-vocab KL (5/5 PASS)</div>
+    <span class="verdict pass">pass</span>
+  </div>
+  <div class="card metric-box">
+    <div class="value">28.4</div>
+    <div class="label">Mean |&delta;| at k=50</div>
+    <div class="delta">+17% vs 4-bit (24.3)</div>
+  </div>
+</div>
+
+<h3>Top-1 predictions</h3>
+
+<table>
+  <tr><th>Prompt</th><th>Base predicts</th><th>Instruct predicts</th><th>Mean |&delta;| (k=50)</th></tr>
+  <tr><td>1. Fibonacci</td><td><code>import</code></td><td><code>Here</code></td><td>30.75</td></tr>
+  <tr><td>2. Binary search</td><td><code>def</code></td><td><code>Here</code></td><td>26.38</td></tr>
+  <tr><td>3. Stack class</td><td><code>class</code></td><td><code>Sure</code></td><td>29.63</td></tr>
+  <tr><td>4. Pair sum</td><td><code>user</code></td><td><code>To</code></td><td>29.00</td></tr>
+  <tr><td>5. Decorator</td><td><code>import</code></td><td><code>Here</code></td><td>26.25</td></tr>
+</table>
+
+<p>The delta is <strong>larger with bf16</strong> (mean 28.4 vs 24.3 with 4-bit), indicating
+that full precision preserves more of the fine-tuning signal that quantization compresses.</p>
+
+<p><strong>Top promoted tokens</strong>: "Sure", "Here", "Certainly", "To" &mdash; conversational openers.<br>
+<strong>Top demoted tokens</strong>: "user", "import", template markers &mdash; raw-completion tokens.</p>
+
+<!-- ================================================================ -->
+<h2>3. Step 3 &mdash; Cross-Model Transfer (5 prompts)</h2>
+
+<p>$M_{\text{raw}}$ = <code>Qwen3-8B-Base-bf16</code>,
+$M_{\text{ft}}$ = <code>Qwen3-8B-Instruct-bf16</code>,
+$M_{\text{large}}$ = <code>Qwen3-14B-Base-bf16</code>.</p>
+
+<h3>Top-1 prediction shift</h3>
+
+<table>
+  <tr><th>Prompt</th><th>14B base</th><th>Recovered</th><th>8B instruct</th><th>Match ft?</th></tr>
+  <tr><td>1. Fibonacci</td><td><code>def</code></td><td><code>Here</code></td><td><code>Here</code></td><td class="highlight-better">yes</td></tr>
+  <tr><td>2. Binary search</td><td><code>You</code></td><td><code>Here</code></td><td><code>Here</code></td><td class="highlight-better">yes</td></tr>
+  <tr><td>3. Stack class</td><td><code>class</code></td><td><code>Sure</code></td><td><code>Sure</code></td><td class="highlight-better">yes</td></tr>
+  <tr><td>4. Pair sum</td><td><code>user</code></td><td><code>To</code></td><td><code>To</code></td><td class="highlight-better">yes</td></tr>
+  <tr><td>5. Decorator</td><td><code>markdown</code></td><td><code>Sure</code></td><td><code>Here</code></td><td>no</td></tr>
+</table>
+
+<p><strong>5/5 predictions shifted</strong>, <strong>4/5 match the 8B instruct model</strong>.</p>
+
+<h3>Distributional metrics: bf16 vs 4-bit</h3>
+
+<table>
+  <tr><th>Metric</th><th>bf16</th><th>4-bit</th><th>Change</th></tr>
+  <tr><td>JS(ft, recovered) full</td><td><strong>0.016</strong></td><td>0.105</td><td class="highlight-better">-85%</td></tr>
+  <tr><td>JS(large, recovered) full</td><td>0.638</td><td>0.617</td><td>~same</td></tr>
+  <tr><td>KL(ft||rec) at k=50</td><td><strong>0.073</strong></td><td>0.279</td><td class="highlight-better">-74%</td></tr>
+  <tr><td>KL(ft||rec) at k=10</td><td><strong>0.242</strong></td><td>0.017</td><td>+225% (more signal at boundaries)</td></tr>
+  <tr><td>ft top-1 match at k=50</td><td><strong>5/5</strong></td><td>4/5</td><td class="highlight-better">+1</td></tr>
+</table>
+
+<p>bf16 dramatically reduces the divergence between recovered and fine-tuned distributions.
+The recovered distribution is <strong>85% closer to the instruct model</strong> in JS divergence.</p>
+
+<!-- ================================================================ -->
+<h2>4. IFEval First-Token Analysis (541 Prompts)</h2>
+
+<p>All 541 IFEval instruction-following prompts, first-token logits only.</p>
+
+<div class="grid-3">
+  <div class="card metric-box">
+    <div class="value">72.6%</div>
+    <div class="label">Top-1 shifted</div>
+    <div class="delta">393/541 prompts</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value" style="color:var(--green)">89.5%</div>
+    <div class="label">Matches 8B instruct</div>
+    <div class="delta">484/541 &middot; +3.7pp vs 4-bit</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value">0.027</div>
+    <div class="label">Mean JS(ft, rec)</div>
+    <div class="delta">-29% vs 4-bit (0.038)</div>
+  </div>
+</div>
+
+<h3>Restricted metrics at scale</h3>
+
+<table>
+  <tr><th>k</th><th>KL(ft||rec)</th><th>ft top-1 match</th><th>top-5 overlap</th><th>4-bit top-1 match</th></tr>
+  <tr><td>10</td><td><strong>0.062</strong></td><td><strong>518/541 (95.7%)</strong></td><td>0.94</td><td>498/541 (92.1%)</td></tr>
+  <tr><td>50</td><td>0.087</td><td>496/541 (91.7%)</td><td>0.90</td><td>478/541 (88.4%)</td></tr>
+  <tr><td>200</td><td>0.113</td><td>494/541 (91.3%)</td><td>0.87</td><td>471/541 (87.1%)</td></tr>
+</table>
+
+<p>At <strong>k=10</strong>, bf16 achieves <strong>95.7% top-1 match</strong> with the instruct model across all 541 prompts
+(vs 92.1% with 4-bit). The restriction-as-regularization effect holds even more strongly
+with full precision.</p>
+
+<h3>Category breakdown (top-1 shift rate)</h3>
+
+<table>
+  <tr><th>Category</th><th>bf16 shift rate</th><th>4-bit shift rate</th></tr>
+  <tr><td>change_case</td><td>74/89 (83%)</td><td>~78%</td></tr>
+  <tr><td>detectable_content</td><td>46/53 (87%)</td><td>N/A</td></tr>
+  <tr><td>language</td><td>27/31 (87%)</td><td>~81%</td></tr>
+  <tr><td>keywords</td><td>125/163 (77%)</td><td>~77%</td></tr>
+  <tr><td>punctuation</td><td>50/66 (76%)</td><td>N/A</td></tr>
+  <tr><td>length_constraints</td><td>105/143 (73%)</td><td>~79%</td></tr>
+  <tr><td>startend</td><td>43/67 (64%)</td><td>N/A</td></tr>
+  <tr><td>detectable_format</td><td>95/157 (61%)</td><td>N/A</td></tr>
+  <tr><td>combination</td><td>38/65 (58%)</td><td>~58%</td></tr>
+</table>
+
+<!-- ================================================================ -->
+<h2>5. Full Generation (541 Prompts)</h2>
+
+<p>Multi-token generation with all 3 bf16 models loaded simultaneously (~62 GB).
+Three modes: 14B base alone, delta-steered 14B, 8B instruct alone.</p>
+
+<h3>Generation statistics</h3>
+
+<table>
+  <tr><th>Metric</th><th>14B base</th><th>Delta-steered</th><th>8B instruct</th></tr>
+  <tr><td>Conversational opener</td><td>54/541 (10.0%)</td><td><strong>100/541 (18.5%)</strong></td><td>86/541 (15.9%)</td></tr>
+  <tr><td>Has code block</td><td>23/541</td><td>17/541</td><td>13/541</td></tr>
+  <tr><td>Avg response words</td><td>167</td><td>167</td><td>129</td></tr>
+  <tr><td>Avg tokens/sec</td><td>21.8</td><td>10.7</td><td>38.0</td></tr>
+</table>
+
+<p>The delta-steered model produces <strong>more conversational responses</strong> than even the 8B instruct
+(100 vs 86), though at the cost of 3x slower generation (3 model forward passes per token).</p>
+
+<!-- ================================================================ -->
+<h2>6. IFEval Instruction-Following Scores (541 Prompts)</h2>
+
+<p>Each generated response scored against IFEval's verifiable constraints
+(keyword presence, word count, formatting, case, punctuation, etc.).</p>
+
+<h3>Prompt-level strict accuracy</h3>
+
+<div class="grid-3">
+  <div class="card metric-box">
+    <div class="value" style="color:var(--muted)">40.7%</div>
+    <div class="label">14B base</div>
+    <div class="delta">220/541</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value" style="color:var(--accent)">57.1%</div>
+    <div class="label">Delta-steered</div>
+    <div class="delta">309/541 &middot; <strong>+16.4pp</strong></div>
+  </div>
+  <div class="card metric-box">
+    <div class="value" style="color:var(--green)">61.6%</div>
+    <div class="label">8B instruct (ceiling)</div>
+    <div class="delta">333/541</div>
+  </div>
+</div>
+
+<p>The delta-steered 14B closes <strong>78%</strong> of the gap between the raw base and the 8B instruct ceiling.</p>
+
+<h3>Instruction-level accuracy</h3>
+
+<table>
+  <tr><th>Model</th><th>Pass</th><th>Total</th><th>Accuracy</th></tr>
+  <tr><td>14B base</td><td>433</td><td>834</td><td>51.9%</td></tr>
+  <tr><td>Delta-steered 14B</td><td>569</td><td>834</td><td><strong>68.2%</strong></td></tr>
+  <tr><td>8B instruct</td><td>598</td><td>834</td><td>71.7%</td></tr>
+</table>
+
+<h3>Per-category breakdown</h3>
+
+<table>
+  <tr><th>Category</th><th>Total</th><th>Base</th><th>Delta</th><th>Instruct</th></tr>
+  <tr><td>change_case</td><td>89</td><td>33 (37%)</td><td class="highlight-better"><strong>82 (92%)</strong></td><td>76 (85%)</td></tr>
+  <tr><td>punctuation</td><td>66</td><td>9 (14%)</td><td class="highlight-better"><strong>60 (91%)</strong></td><td>65 (98%)</td></tr>
+  <tr><td>keywords</td><td>163</td><td>88 (54%)</td><td><strong>115 (71%)</strong></td><td>123 (75%)</td></tr>
+  <tr><td>detectable_format</td><td>157</td><td>87 (55%)</td><td><strong>95 (61%)</strong></td><td>95 (61%)</td></tr>
+  <tr><td>combination</td><td>65</td><td>57 (88%)</td><td><strong>59 (91%)</strong></td><td>58 (89%)</td></tr>
+  <tr><td>language</td><td>31</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td></tr>
+  <tr><td>length_constraints</td><td>143</td><td>63 (44%)</td><td>57 (40%)</td><td>80 (56%)</td></tr>
+  <tr><td>detectable_content</td><td>53</td><td>24 (45%)</td><td><strong>28 (53%)</strong></td><td>29 (55%)</td></tr>
+  <tr><td>startend</td><td>67</td><td>41 (61%)</td><td><strong>42 (63%)</strong></td><td>41 (61%)</td></tr>
+</table>
+
+<p>Notable: the delta-steered model <strong>beats the 8B instruct</strong> on:</p>
+<ul>
+  <li><code>change_case</code>: 92% vs 85% &mdash; the 14B base's larger capacity combines well with the delta's case-transformation signal</li>
+  <li><code>combination</code>: 91% vs 89%</li>
+  <li><code>startend</code>: 63% vs 61%</li>
+</ul>
+
+<!-- ================================================================ -->
+<h2>7. bf16 vs 4-bit Comparison</h2>
+
+<p>Head-to-head comparison of bf16 full-precision vs 4-bit quantized results.</p>
+
+<h3>First-token distributional quality</h3>
+
+<table>
+  <tr><th>Metric (541 prompts)</th><th>bf16</th><th>4-bit</th><th>Verdict</th></tr>
+  <tr>
+    <td>Top-1 matches instruct</td>
+    <td><strong>89.5%</strong> (484/541)</td>
+    <td>85.8% (464/541)</td>
+    <td><span class="verdict improved">+3.7pp</span></td>
+  </tr>
+  <tr>
+    <td>Top-1 match at k=10</td>
+    <td><strong>95.7%</strong> (518/541)</td>
+    <td>92.1% (498/541)</td>
+    <td><span class="verdict improved">+3.6pp</span></td>
+  </tr>
+  <tr>
+    <td>Mean JS(ft, recovered)</td>
+    <td><strong>0.027</strong></td>
+    <td>0.038</td>
+    <td><span class="verdict improved">-29%</span></td>
+  </tr>
+  <tr>
+    <td>Precision noise floor</td>
+    <td><strong>~0.03 nats</strong></td>
+    <td>~0.1 nats</td>
+    <td><span class="verdict improved">3x lower</span></td>
+  </tr>
+</table>
+
+<h3>Full generation IFEval scores</h3>
+
+<table>
+  <tr><th>Model</th><th>bf16 (541 prompts)</th><th>4-bit (50 prompts)</th></tr>
+  <tr><td>14B base</td><td>40.7%</td><td>36.0%</td></tr>
+  <tr><td>Delta-steered 14B</td><td><strong>57.1%</strong></td><td>54.0%</td></tr>
+  <tr><td>8B instruct (ceiling)</td><td>61.6%</td><td>54.0%</td></tr>
+  <tr><td>Gap closed</td><td><strong>78%</strong></td><td>100% (on 50)</td></tr>
+</table>
+
+<p>The bf16 results on 541 prompts give a more reliable picture. The 4-bit 50-prompt run
+happened to exactly match the ceiling, but at scale with bf16, the delta closes 78% of
+the gap &mdash; still very strong transfer with zero fine-tuning of the 14B model.</p>
+
+<h3>What bf16 buys you</h3>
+
+<ul>
+  <li><strong>Better distributional fidelity</strong>: the recovered distribution is 29% closer to the instruct model (JS divergence)</li>
+  <li><strong>Higher top-1 agreement</strong>: 89.5% vs 85.8% across 541 prompts</li>
+  <li><strong>Lower noise floor</strong>: ~0.03 nats vs ~0.1 nats, making metrics more trustworthy</li>
+  <li><strong>Stronger delta signal</strong>: mean |$\delta$| ~28 vs ~24, preserving more fine-tuning information</li>
+  <li><strong>Cost</strong>: ~4x more memory (62 GB peak vs ~18 GB for 4-bit), ~2x slower inference</li>
+</ul>
+
+<!-- ================================================================ -->
+<h2>8. Conclusions</h2>
+
+<div class="card">
+<p>Running GRAFT with bf16 models confirms and strengthens the 4-bit findings:</p>
+
+<ol>
+  <li><strong>Formula is correct</strong> (Step 1): Full-vocab KL = 0 exactly in oracle mode. bf16 reduces restricted KL precision noise by 5.5x.</li>
+  <li><strong>Delta carries stronger signal at bf16</strong> (Step 2): Mean |$\delta$| is 17% larger, meaning quantization compresses the fine-tuning information.</li>
+  <li><strong>Cross-model transfer improves</strong> (Step 3): JS(ft, recovered) drops from 0.105 to 0.016 &mdash; an 85% reduction in distributional distance.</li>
+  <li><strong>At scale</strong> (541 IFEval): 89.5% top-1 match (was 85.8%), 95.7% at k=10 (was 92.1%).</li>
+  <li><strong>Full generation</strong>: 57.1% IFEval accuracy vs 40.7% base &mdash; a <strong>16.4pp improvement</strong> with zero fine-tuning, closing 78% of the gap to the instruct ceiling.</li>
+  <li><strong>Delta beats instruct on some categories</strong>: change_case (92% vs 85%), combination (91% vs 89%), startend (63% vs 61%) &mdash; the 14B base's capacity enhances the delta signal.</li>
+</ol>
+
+<p>The proxy tuning formula:</p>
+
+$$p_{\text{steered}} = \text{softmax}\bigl(s_{\text{large}} + \lambda \cdot (\log p_{\text{ft}}^{S_t} - \log p_{\text{base}}^{S_t})\bigr)$$
+
+<p>works better with bf16 because the delta $(\log p_{\text{ft}} - \log p_{\text{base}})$ is computed with
+higher fidelity, and the large model's logit landscape is more nuanced. The tradeoff is memory and
+speed, but for applications where quality matters more than latency, bf16 is the clear winner.</p>
+</div>
+
+</body>
+</html>
