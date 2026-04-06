@@ -399,45 +399,50 @@ Results show that delta-steered generation produces instruction-following text
 that closely matches the 8B instruct model's output style and content, while
 the 14B base alone produces raw text completion.
 
-### IFEval Instruction-Following Scores (50 prompts, full generation)
+### IFEval Instruction-Following Scores (full 541 prompts, full generation)
 
-We evaluated the generated responses against IFEval's verifiable constraints
-(keyword presence, word count, formatting, case, punctuation, etc.):
+We generated full multi-token responses for all 541 IFEval prompts and scored them
+against the verifiable constraints (keyword presence, word count, formatting, case, punctuation, etc.):
 
 **Prompt-level strict accuracy** (all instructions in a prompt satisfied):
 
 | Model | Accuracy |
 |-------|----------|
-| 14B base (no delta) | 18/50 (36.0%) |
-| Delta-steered 14B | **27/50 (54.0%)** |
-| 8B instruct (ceiling) | 27/50 (54.0%) |
+| 14B base (no delta) | 222/541 (41.0%) |
+| Delta-steered 14B | **323/541 (59.7%)** |
+| 8B instruct (ceiling) | 334/541 (61.7%) |
 
 **Instruction-level accuracy** (per individual constraint):
 
 | Model | Accuracy |
 |-------|----------|
-| 14B base | 35/76 (46.1%) |
-| Delta-steered 14B | **50/76 (65.8%)** |
-| 8B instruct | 51/76 (67.1%) |
+| 14B base | 440/834 (52.8%) |
+| Delta-steered 14B | **587/834 (70.4%)** |
+| 8B instruct | 598/834 (71.7%) |
 
-The delta-steered 14B matches the 8B instruct exactly at prompt level (both 54%)
-and nearly matches at instruction level (65.8% vs 67.1%).
+The delta-steered 14B nearly matches the 8B instruct (59.7% vs 61.7% prompt-level,
+70.4% vs 71.7% instruction-level) and improves the raw 14B base by **+18.7pp**.
 
 **Per-category breakdown:**
 
-| Category | Base | Delta | Instruct |
-|----------|------|-------|----------|
-| change_case | 3/10 | **10/10** | 8/10 |
-| punctuation | 1/6 | **6/6** | 6/6 |
-| keywords | 7/16 | **11/16** | 12/16 |
-| detectable_format | 7/14 | 7/14 | 7/14 |
-| length_constraints | 4/12 | 4/12 | 5/12 |
-| startend | 3/7 | 3/7 | 3/7 |
-| combination | 6/6 | 6/6 | 6/6 |
-| language | 2/2 | 2/2 | 2/2 |
+| Category | Total | Base | Delta | Instruct |
+|----------|-------|------|-------|----------|
+| change_case | 89 | 38 (43%) | **81 (91%)** | 74 (83%) |
+| punctuation | 66 | 10 (15%) | **65 (98%)** | 64 (97%) |
+| keywords | 163 | 91 (56%) | **121 (74%)** | 118 (72%) |
+| combination | 65 | 55 (85%) | **62 (95%)** | 61 (94%) |
+| detectable_content | 53 | 24 (45%) | **34 (64%)** | 34 (64%) |
+| detectable_format | 157 | 91 (58%) | 96 (61%) | 97 (62%) |
+| language | 31 | 31 (100%) | 31 (100%) | 31 (100%) |
+| length_constraints | 143 | 59 (41%) | 55 (38%) | 78 (55%) |
+| startend | 67 | 41 (61%) | 42 (63%) | 41 (61%) |
 
-Notable: the delta-steered model **beats** the 8B instruct on `change_case` (10/10 vs 8/10),
-likely because the 14B base's larger capacity combines well with the delta's case-transformation signal.
+The delta-steered model **beats the 8B instruct** on change_case (91% vs 83%),
+keywords (74% vs 72%), and combination (95% vs 94%). The 14B base's larger
+capacity combines well with the delta to produce more reliable constraint adherence.
+
+The main weakness is `length_constraints` (38% vs instruct's 55%), where planning
+over many tokens is required and the per-token delta signal is insufficient.
 
 ---
 
@@ -455,4 +460,4 @@ Key findings:
 3. The delta transfers across model sizes (Step 3: 5/5 shifted, 4/5 match ft)
 4. The transfer holds at scale (IFEval: 85.8% top-1 match on 541 prompts, first-token)
 5. Restriction to k=10 is both cheapest and most accurate (92.1% top-1 match)
-6. Full generation: delta-steered 14B achieves **54% IFEval strict accuracy** (= 8B instruct), up from 36% for the raw 14B base — an 18pp improvement with zero fine-tuning
+6. Full generation (541 prompts): delta-steered 14B achieves **59.7% IFEval strict accuracy** (vs 61.7% instruct), up from 41.0% for the raw 14B base — an 18.7pp improvement with zero fine-tuning. Delta beats instruct on change_case, keywords, and combination categories.

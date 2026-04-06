@@ -562,7 +562,7 @@ confirming the instruction-following signal is model-size-invariant within the Q
   <li><strong>Step 3 (cross-model)</strong>: <strong>The 8B instruct delta successfully steers the 14B base model.</strong> 5/5 predictions shifted, 4/5 match the instruct model exactly.</li>
   <li><strong>Restriction helps, not hurts</strong>: k=10 gives the lowest KL (0.017) and perfect top-1 (5/5).</li>
   <li><strong>IFEval at scale</strong>: 85.8% top-1 match across 541 prompts (first-token); 92.1% at k=10.</li>
-  <li><strong>Full generation</strong>: <strong>54% IFEval strict accuracy</strong> (= 8B instruct), up from 36% for the raw 14B base. +18pp with zero fine-tuning. Delta beats instruct on change_case (10/10 vs 8/10).</li>
+  <li><strong>Full generation (541 prompts)</strong>: <strong>59.7% IFEval strict accuracy</strong> (vs 61.7% instruct), up from 41.0% for the raw 14B base. +18.7pp with zero fine-tuning. Delta beats instruct on change_case (91% vs 83%), keywords (74% vs 72%), and combination (95% vs 94%).</li>
 </ol>
 </div>
 
@@ -742,28 +742,40 @@ Thy quest doth lead thee to lands of the...</code></pre>
 </details>
 
 <!-- ================================================================ -->
-<h2>11. IFEval Quantitative Scores (Full Generation)</h2>
+<h2>11. IFEval Quantitative Scores (Full 541-Prompt Generation)</h2>
 
-<p>We evaluated the 50 generated responses against IFEval's <strong>verifiable instruction-following constraints</strong>
-(keyword presence, word count, case, punctuation, formatting, etc.). This is the gold-standard
-measure: does the generated text actually satisfy what was asked?</p>
+<p>We generated full multi-token responses for <strong>all 541 IFEval prompts</strong> and scored them against
+IFEval's <strong>verifiable instruction-following constraints</strong>
+(keyword presence, word count, case, punctuation, formatting, etc.).</p>
 
 <h3>11.1 Headline Results</h3>
 
 <div class="grid-2">
   <div class="card metric-box">
-    <div class="value" style="color:var(--green)">54.0%</div>
-    <div class="label">Delta strict accuracy (= 8B instruct)</div>
+    <div class="value" style="color:var(--green)">59.7%</div>
+    <div class="label">Delta strict accuracy (541 prompts)</div>
   </div>
   <div class="card metric-box">
-    <div class="value">36.0%</div>
+    <div class="value">41.0%</div>
     <div class="label">14B base strict accuracy (no delta)</div>
   </div>
 </div>
 
+<div class="grid-2">
+  <div class="card metric-box">
+    <div class="value" style="color:var(--green)">70.4%</div>
+    <div class="label">Delta instruction-level accuracy</div>
+  </div>
+  <div class="card metric-box">
+    <div class="value">61.7%</div>
+    <div class="label">8B instruct strict accuracy (ceiling)</div>
+  </div>
+</div>
+
 <div class="card" style="border-left: 4px solid var(--green);">
-<p><strong>+18 percentage points</strong> improvement from grafting the 8B delta onto the 14B base — with zero fine-tuning.
-The delta-steered model matches the 8B instruct model exactly at prompt level.</p>
+<p><strong>+18.7 percentage points</strong> improvement from grafting the 8B delta onto the 14B base &mdash; with zero fine-tuning.
+The delta-steered model nearly matches the 8B instruct (59.7% vs 61.7%), and <em>beats it</em> on
+several categories.</p>
 </div>
 
 <h3>11.2 Prompt-Level Strict Accuracy</h3>
@@ -772,9 +784,9 @@ The delta-steered model matches the 8B instruct model exactly at prompt level.</
 <table>
   <thead><tr><th>Model</th><th>Pass</th><th>Accuracy</th></tr></thead>
   <tbody>
-    <tr><td>14B base (no delta)</td><td>18/50</td><td>36.0%</td></tr>
-    <tr><td><strong>Delta-steered 14B</strong></td><td><strong>27/50</strong></td><td><strong>54.0%</strong></td></tr>
-    <tr><td>8B instruct (ceiling)</td><td>27/50</td><td>54.0%</td></tr>
+    <tr><td>14B base (no delta)</td><td>222/541</td><td>41.0%</td></tr>
+    <tr><td><strong>Delta-steered 14B</strong></td><td><strong>323/541</strong></td><td><strong>59.7%</strong></td></tr>
+    <tr><td>8B instruct (ceiling)</td><td>334/541</td><td>61.7%</td></tr>
   </tbody>
 </table>
 
@@ -784,9 +796,9 @@ The delta-steered model matches the 8B instruct model exactly at prompt level.</
 <table>
   <thead><tr><th>Model</th><th>Pass</th><th>Accuracy</th></tr></thead>
   <tbody>
-    <tr><td>14B base</td><td>35/76</td><td>46.1%</td></tr>
-    <tr><td><strong>Delta-steered 14B</strong></td><td><strong>50/76</strong></td><td><strong>65.8%</strong></td></tr>
-    <tr><td>8B instruct</td><td>51/76</td><td>67.1%</td></tr>
+    <tr><td>14B base</td><td>440/834</td><td>52.8%</td></tr>
+    <tr><td><strong>Delta-steered 14B</strong></td><td><strong>587/834</strong></td><td><strong>70.4%</strong></td></tr>
+    <tr><td>8B instruct</td><td>598/834</td><td>71.7%</td></tr>
   </tbody>
 </table>
 
@@ -795,25 +807,29 @@ The delta-steered model matches the 8B instruct model exactly at prompt level.</
 <table>
   <thead><tr><th>Category</th><th>Total</th><th>14B base</th><th>Delta</th><th>8B instruct</th></tr></thead>
   <tbody>
-    <tr><td>change_case</td><td>10</td><td>3 (30%)</td><td style="color:var(--green)"><strong>10 (100%)</strong></td><td>8 (80%)</td></tr>
-    <tr><td>punctuation</td><td>6</td><td>1 (17%)</td><td style="color:var(--green)"><strong>6 (100%)</strong></td><td>6 (100%)</td></tr>
-    <tr><td>keywords</td><td>16</td><td>7 (44%)</td><td><strong>11 (69%)</strong></td><td>12 (75%)</td></tr>
-    <tr><td>detectable_format</td><td>14</td><td>7 (50%)</td><td>7 (50%)</td><td>7 (50%)</td></tr>
-    <tr><td>length_constraints</td><td>12</td><td>4 (33%)</td><td>4 (33%)</td><td>5 (42%)</td></tr>
-    <tr><td>startend</td><td>7</td><td>3 (43%)</td><td>3 (43%)</td><td>3 (43%)</td></tr>
-    <tr><td>combination</td><td>6</td><td>6 (100%)</td><td>6 (100%)</td><td>6 (100%)</td></tr>
-    <tr><td>language</td><td>2</td><td>2 (100%)</td><td>2 (100%)</td><td>2 (100%)</td></tr>
+    <tr><td>change_case</td><td>89</td><td>38 (43%)</td><td style="color:var(--green)"><strong>81 (91%)</strong></td><td>74 (83%)</td></tr>
+    <tr><td>punctuation</td><td>66</td><td>10 (15%)</td><td style="color:var(--green)"><strong>65 (98%)</strong></td><td>64 (97%)</td></tr>
+    <tr><td>keywords</td><td>163</td><td>91 (56%)</td><td style="color:var(--green)"><strong>121 (74%)</strong></td><td>118 (72%)</td></tr>
+    <tr><td>combination</td><td>65</td><td>55 (85%)</td><td><strong>62 (95%)</strong></td><td>61 (94%)</td></tr>
+    <tr><td>detectable_content</td><td>53</td><td>24 (45%)</td><td><strong>34 (64%)</strong></td><td>34 (64%)</td></tr>
+    <tr><td>detectable_format</td><td>157</td><td>91 (58%)</td><td>96 (61%)</td><td>97 (62%)</td></tr>
+    <tr><td>language</td><td>31</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td></tr>
+    <tr><td>length_constraints</td><td>143</td><td>59 (41%)</td><td>55 (38%)</td><td>78 (55%)</td></tr>
+    <tr><td>startend</td><td>67</td><td>41 (61%)</td><td>42 (63%)</td><td>41 (61%)</td></tr>
   </tbody>
 </table>
 
 <div class="card example">
-<p><strong>Notable: delta <em>beats</em> the 8B instruct on change_case</strong> (10/10 vs 8/10).
-The 14B base model's larger capacity combines with the delta's case-transformation signal
-to produce more reliable case control than the smaller instruct model alone.</p>
+<p><strong>Delta <em>beats</em> 8B instruct on 3 categories:</strong></p>
+<ul>
+  <li><strong>change_case</strong>: 91% vs 83% &mdash; the 14B's larger capacity + delta = better case control</li>
+  <li><strong>keywords</strong>: 74% vs 72% &mdash; delta steers keyword inclusion more reliably</li>
+  <li><strong>combination</strong>: 95% vs 94% &mdash; multi-instruction prompts handled well</li>
+</ul>
 
-<p><strong>Where delta doesn't help:</strong> length_constraints (both 33%) and startend (both 43%).
-These require the model to plan ahead over many tokens — the first-token delta signal
-isn't sufficient. These may improve with $\lambda$ tuning or multi-token lookahead.</p>
+<p><strong>Where delta falls short:</strong> <code>length_constraints</code> (38% vs instruct's 55%).
+Length control requires planning ahead over many tokens &mdash; the per-token delta
+signal isn't sufficient. This may improve with $\lambda$ tuning or lookahead decoding.</p>
 </div>
 
 <h3>11.5 Examples: Delta Passes Where Base Fails</h3>
@@ -859,7 +875,7 @@ $$\underbrace{p_{\text{steered}}}_{\text{14B that follows instructions}} = \text
 When a new base model is released in the same family (e.g., Qwen3-32B-Base), you don't need to
 wait for the instruct variant. Graft the 8B instruct delta onto it immediately.
 The delta transferred at <strong>85.8% top-1 accuracy</strong> across 541 IFEval prompts,
-and achieved <strong>54% IFEval strict accuracy</strong> on full generation (= 8B instruct, up from 36% base).</p></li>
+and achieved <strong>59.7% IFEval strict accuracy</strong> on full 541-prompt generation (vs 61.7% instruct, up from 41.0% base).</p></li>
 
 <li><p><strong>No GPU training required.</strong>
 The entire method runs at inference time. No fine-tuning, no gradient computation, no training data.
