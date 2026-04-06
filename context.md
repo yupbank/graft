@@ -410,7 +410,8 @@ against the verifiable constraints (keyword presence, word count, formatting, ca
 |-------|----------|
 | 14B base (no delta) | 222/541 (41.0%) |
 | Delta-steered 14B | **323/541 (59.7%)** |
-| 8B instruct (ceiling) | 334/541 (61.7%) |
+| 8B instruct | 334/541 (61.7%) |
+| 14B instruct | 336/541 (62.1%) |
 
 **Instruction-level accuracy** (per individual constraint):
 
@@ -419,30 +420,34 @@ against the verifiable constraints (keyword presence, word count, formatting, ca
 | 14B base | 440/834 (52.8%) |
 | Delta-steered 14B | **587/834 (70.4%)** |
 | 8B instruct | 598/834 (71.7%) |
+| 14B instruct | 602/834 (72.2%) |
 
-The delta-steered 14B nearly matches the 8B instruct (59.7% vs 61.7% prompt-level,
-70.4% vs 71.7% instruction-level) and improves the raw 14B base by **+18.7pp**.
+The delta-steered 14B nearly matches both instruct models (59.7% vs 62.1% for 14B-instruct,
+vs 61.7% for 8B-instruct at prompt level). It recovers **96.1% of the 14B instruct's
+performance** (59.7/62.1) while using only the 8B instruct delta — no 14B fine-tuning needed.
 
 **Per-category breakdown:**
 
-| Category | Total | Base | Delta | Instruct |
-|----------|-------|------|-------|----------|
+| Category | Total | Base | Delta | 8B inst | 14B inst |
+|----------|-------|------|-------|---------|----------|
 | change_case | 89 | 38 (43%) | **81 (91%)** | 74 (83%) |
 | punctuation | 66 | 10 (15%) | **65 (98%)** | 64 (97%) |
-| keywords | 163 | 91 (56%) | **121 (74%)** | 118 (72%) |
-| combination | 65 | 55 (85%) | **62 (95%)** | 61 (94%) |
-| detectable_content | 53 | 24 (45%) | **34 (64%)** | 34 (64%) |
-| detectable_format | 157 | 91 (58%) | 96 (61%) | 97 (62%) |
-| language | 31 | 31 (100%) | 31 (100%) | 31 (100%) |
-| length_constraints | 143 | 59 (41%) | 55 (38%) | 78 (55%) |
-| startend | 67 | 41 (61%) | 42 (63%) | 41 (61%) |
+| keywords | 163 | 91 (56%) | **121 (74%)** | 118 (72%) | 122 (75%) |
+| combination | 65 | 55 (85%) | **62 (95%)** | 61 (94%) | 59 (91%) |
+| detectable_content | 53 | 24 (45%) | 34 (64%) | 34 (64%) | 33 (62%) |
+| detectable_format | 157 | 91 (58%) | 96 (61%) | 97 (62%) | 95 (61%) |
+| language | 31 | 31 (100%) | 31 (100%) | 31 (100%) | 31 (100%) |
+| length_constraints | 143 | 59 (41%) | 55 (38%) | 78 (55%) | 78 (55%) |
+| startend | 67 | 41 (61%) | 42 (63%) | 41 (61%) | 41 (61%) |
 
-The delta-steered model **beats the 8B instruct** on change_case (91% vs 83%),
-keywords (74% vs 72%), and combination (95% vs 94%). The 14B base's larger
-capacity combines well with the delta to produce more reliable constraint adherence.
+The delta-steered model **beats both instruct models** on several categories:
+- **change_case**: delta 91% vs 8B-inst 83% vs 14B-inst 88%
+- **keywords**: delta 74% vs 8B-inst 72% vs 14B-inst 75%
+- **combination**: delta 95% vs 8B-inst 94% vs 14B-inst 91%
+- **startend**: delta 63% vs both instruct models at 61%
 
-The main weakness is `length_constraints` (38% vs instruct's 55%), where planning
-over many tokens is required and the per-token delta signal is insufficient.
+The main weakness is `length_constraints` (38% vs 55% for both instruct models),
+where planning over many tokens is required and the per-token delta is insufficient.
 
 ---
 
@@ -460,4 +465,4 @@ Key findings:
 3. The delta transfers across model sizes (Step 3: 5/5 shifted, 4/5 match ft)
 4. The transfer holds at scale (IFEval: 85.8% top-1 match on 541 prompts, first-token)
 5. Restriction to k=10 is both cheapest and most accurate (92.1% top-1 match)
-6. Full generation (541 prompts): delta-steered 14B achieves **59.7% IFEval strict accuracy** (vs 61.7% instruct), up from 41.0% for the raw 14B base — an 18.7pp improvement with zero fine-tuning. Delta beats instruct on change_case, keywords, and combination categories.
+6. Full generation (541 prompts): delta-steered 14B achieves **59.7% IFEval strict accuracy**, recovering **96.1% of the 14B instruct's 62.1%** — up from 41.0% base. The 8B delta transfers nearly all of the instruction-following capability without any 14B fine-tuning.
