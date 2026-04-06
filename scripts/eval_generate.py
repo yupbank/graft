@@ -42,7 +42,7 @@ MODEL_LARGE = str(PROJECT_DIR / "models" / "Qwen3-14B-Base-4bit")
 LAMBDA = 1.0
 TOP_K = 50
 MAX_TOKENS = 256
-NUM_PROMPTS = 50
+NUM_PROMPTS = 541  # Full IFEval dataset
 OUTPUT_JSON = str(PROJECT_DIR / "results" / "generation_samples.json")
 
 mx.random.seed(42)
