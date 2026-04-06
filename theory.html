@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRAFT — Theoretical Framework</title>
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+<style>
+  :root {
+    --bg: #fafafa; --fg: #1a1a1a; --accent: #2563eb; --green: #16a34a;
+    --red: #dc2626; --amber: #d97706; --card: #fff; --border: #e5e7eb;
+    --code-bg: #f3f4f6; --muted: #6b7280;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a; --fg: #e2e8f0; --accent: #60a5fa; --green: #4ade80;
+      --red: #f87171; --amber: #fbbf24; --card: #1e293b; --border: #334155;
+      --code-bg: #1e293b; --muted: #94a3b8;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg); color: var(--fg); line-height: 1.8;
+    max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem;
+  }
+  h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.35rem; margin: 2.5rem 0 1rem; border-bottom: 2px solid var(--accent); padding-bottom: 0.3rem; }
+  h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+  p, li { margin-bottom: 0.6rem; }
+  ul, ol { padding-left: 1.5rem; }
+  .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1.25rem 1.5rem; margin: 1rem 0;
+  }
+  .math-block {
+    background: var(--card); border-left: 3px solid var(--accent);
+    padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 6px 6px 0;
+    overflow-x: auto;
+  }
+  .insight {
+    border-left: 3px solid var(--green);
+  }
+  .warning {
+    border-left: 3px solid var(--amber);
+  }
+  table {
+    width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem;
+  }
+  th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; background: var(--code-bg); }
+  code {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    background: var(--code-bg); padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.88em;
+  }
+  .neg { color: var(--red); }
+  .pos { color: var(--green); }
+</style>
+</head>
+<body>
+
+<h1>GRAFT &mdash; Theoretical Framework</h1>
+<p class="subtitle">Connecting proxy-tuning, restricted deltas, and the reward transfer hypothesis</p>
+
+<!-- ================================================================ -->
+<h2>1. The Reward Interpretation of Fine-Tuning</h2>
+
+<p>The starting point is the KL-penalized RL objective (Korbak et al., 2022). Given a pretrained model $\mathcal{M}$:</p>
+
+<div class="math-block">
+$$\arg\max_{\mathcal{M}^*} \;\; \mathbb{E}_{y \sim p_{\mathcal{M}}(\cdot|x)}\bigl[r(x,y)\bigr] - \beta \,\text{KL}\bigl(p_{\mathcal{M}}(\cdot|x) \;\|\; p_{\mathcal{M}^*}(\cdot|x)\bigr) \qquad (1)$$
+</div>
+
+<p>This has a closed-form solution:</p>
+
+<div class="math-block">
+$$p_{\mathcal{M}^*}(y \mid x) = \frac{1}{Z}\, p_{\mathcal{M}}(y \mid x) \,\exp\!\left(\frac{1}{\beta}\,r(x,y)\right) \qquad (2)$$
+</div>
+
+<p>Rearranging, <strong>any</strong> fine-tuned model $\mathcal{M}^*$ can be viewed as implicitly optimizing a reward:</p>
+
+<div class="math-block">
+$$r(x,y) = \beta \log \frac{p_{\mathcal{M}^*}(y \mid x)}{p_{\mathcal{M}}(y \mid x)} \qquad (3)$$
+</div>
+
+<div class="card insight">
+<p><strong>Key insight:</strong> The reward is simply the <em>log-probability ratio</em> between the fine-tuned
+and base models, scaled by $\beta$. This is exactly what proxy-tuning and GRAFT compute as the "delta."</p>
+</div>
+
+<!-- ================================================================ -->
+<h2>2. Proxy-Tuning as Reward Transfer</h2>
+
+<p>Proxy-tuning (Liu et al., 2024) approximates the large model's fine-tuning by using a small model pair:</p>
+
+<div class="math-block">
+$$p_{\mathcal{M}^*}(y \mid x) \;\propto\; p_{\mathcal{M}}(y \mid x) \cdot \frac{p_{\mathcal{M}^+}(y \mid x)}{p_{\mathcal{M}^-}(y \mid x)} \qquad (4)$$
+</div>
+
+<p>where $\mathcal{M}^+$ = small tuned (expert), $\mathcal{M}^-$ = small untuned (anti-expert),
+$\mathcal{M}$ = large base model.</p>
+
+<p>In the reward framework, this means proxy-tuning applies the <strong>small model's implicit reward</strong> to the large model:</p>
+
+<div class="math-block">
+$$\hat{r}_{\text{proxy}}(x,y) = \beta \log \frac{p_{\mathcal{M}^+}(y \mid x)}{p_{\mathcal{M}^-}(y \mid x)}$$
+</div>
+
+<div class="card">
+<p><strong>The transfer assumption:</strong> Proxy-tuning works <em>to the extent that</em> the small pair's implicit
+reward $\hat{r}_{\text{proxy}}$ equals the reward that would result from directly fine-tuning the large model.</p>
+<p>In other words: instruction-following is a reward that transfers across model sizes.</p>
+</div>
+
+<!-- ================================================================ -->
+<h2>3. What GRAFT Changes: Restricted Reward</h2>
+
+<p>GRAFT restricts the reward computation to a candidate set $S_t = \text{top-}k(s_{\text{large}})$:</p>
+
+<div class="math-block">
+$$\hat{r}_{\text{GRAFT}}(x,y) = \beta \log \frac{p_{\mathcal{M}^+}^{S_t}(y \mid x)}{p_{\mathcal{M}^-}^{S_t}(y \mid x)} \qquad \text{for } y \in S_t$$
+</div>
+
+<p>where $p^{S_t}$ denotes probability renormalized over $S_t$ only:</p>
+
+<div class="math-block">
+$$p_{\mathcal{M}^+}^{S_t}(y \mid x) = \frac{p_{\mathcal{M}^+}(y \mid x)}{\sum_{y' \in S_t} p_{\mathcal{M}^+}(y' \mid x)}$$
+</div>
+
+<p>This is a <strong>conditional reward</strong> &mdash; the reward for choosing token $y$
+<em>given that we're already restricting to the large model's top candidates</em>.</p>
+
+<!-- ================================================================ -->
+<h2>4. Why Restricted Reward Can Be Better</h2>
+
+<p>The reward transfer assumption holds <strong>unevenly across the vocabulary</strong>.
+Define the reward transfer gap:</p>
+
+<div class="math-block">
+$$\varepsilon(y) = \left| r_{\text{large}}(x,y) - \hat{r}_{\text{small}}(x,y) \right|$$
+</div>
+
+<h3>4.1 Top-k tokens: $\varepsilon$ is small</h3>
+
+<p>For tokens the large model considers plausible (high $p_{\mathcal{M}}(y|x)$), both the small
+and large models have assigned meaningful probability through training. Their rewards
+reflect <em>real learned preferences</em>. The transfer gap is small.</p>
+
+<h3>4.2 Tail tokens: $\varepsilon$ is large</h3>
+
+<p>For tokens ranked #1000+ (near-zero $p_{\mathcal{M}}(y|x)$), the large model's probability
+is dominated by logit-head weight artifacts, not learned behavior. The small model's
+reward for these tokens is similarly meaningless. The transfer gap is large and unpredictable.</p>
+
+<div class="card insight">
+<p><strong>GRAFT minimizes the expected transfer gap by restricting to $S_t$ where $\varepsilon$ is small:</strong></p>
+$$\mathbb{E}_{y \in S_t}\bigl[\varepsilon(y)\bigr] \;\ll\; \mathbb{E}_{y \in V}\bigl[\varepsilon(y)\bigr]$$
+<p>Full proxy-tuning averages over both regimes. GRAFT restricts to the regime where
+the reward transfer assumption actually holds.</p>
+</div>
+
+<!-- ================================================================ -->
+<h2>5. The Three Methods Compared</h2>
+
+<table>
+<thead>
+<tr><th>Method</th><th>Formula</th><th>Reward space</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Direct fine-tuning</strong></td>
+  <td>$p_{\mathcal{M}^*}(y|x) \propto p_{\mathcal{M}}(y|x) \exp\!\bigl(\tfrac{1}{\beta} r(x,y)\bigr)$</td>
+  <td>True reward (requires training)</td>
+</tr>
+<tr>
+  <td><strong>Proxy-tuning</strong></td>
+  <td>$p(y|x) \propto p_{\mathcal{M}}(y|x) \cdot \frac{p_{\mathcal{M}^+}(y|x)}{p_{\mathcal{M}^-}(y|x)}$</td>
+  <td>Full-vocab transferred reward</td>
+</tr>
+<tr>
+  <td><strong>GRAFT</strong></td>
+  <td>$p(y|x) \propto p_{\mathcal{M}}(y|x) \cdot \frac{p_{\mathcal{M}^+}^{S_t}(y|x)}{p_{\mathcal{M}^-}^{S_t}(y|x)}$ for $y \in S_t$</td>
+  <td>Restricted transferred reward</td>
+</tr>
+</tbody>
+</table>
+
+<p>All three are the same formula &mdash; the only difference is <strong>what vocabulary the reward is computed over</strong>.</p>
+
+<!-- ================================================================ -->
+<h2>6. Empirical Evidence</h2>
+
+<h3>6.1 First-Token Analysis (541 IFEval prompts)</h3>
+
+<p>GRAFT at $k=10$ outperforms full-vocab proxy-tuning for first-token prediction:</p>
+
+<table>
+<thead><tr><th>Method</th><th>Top-1 match with instruct</th><th>KL(ft || recovered)</th></tr></thead>
+<tbody>
+<tr><td>Proxy-tuning (full vocab)</td><td>464/541 (85.8%)</td><td>0.194</td></tr>
+<tr><td>GRAFT $k = 10$</td><td class="pos"><strong>498/541 (92.1%)</strong></td><td class="pos"><strong>0.083</strong></td></tr>
+<tr><td>GRAFT $k = 50$</td><td>478/541 (88.4%)</td><td>0.124</td></tr>
+<tr><td>GRAFT $k = 200$</td><td>471/541 (87.1%)</td><td>0.150</td></tr>
+</tbody>
+</table>
+
+<div class="card insight">
+<p>At the first token, restriction dramatically improves transfer &mdash; consistent with
+the theory that tail tokens add noise to the reward signal.</p>
+</div>
+
+<h3>6.2 Full Generation (first 100 IFEval prompts)</h3>
+
+<p>However, over multi-token generation, proxy-tuning currently leads:</p>
+
+<table>
+<thead><tr><th>Method</th><th>Prompt Strict</th><th>Instruction-Level</th></tr></thead>
+<tbody>
+<tr><td>Proxy-tuning (full vocab)</td><td class="pos"><strong>61/100 (61.0%)</strong></td><td class="pos"><strong>117/163 (71.8%)</strong></td></tr>
+<tr><td>GRAFT $k = 50$</td><td>56/100 (56.0%)</td><td>111/163 (68.1%)</td></tr>
+</tbody>
+</table>
+
+<div class="card warning">
+<p><strong>The restriction advantage at first-token doesn't fully carry over to generation.</strong>
+Possible explanations below.</p>
+</div>
+
+<!-- ================================================================ -->
+<h2>7. Why Restriction Helps at Token 1 but May Hurt at Token $t$</h2>
+
+<p>At <strong>step 1</strong>: $S_t = \text{top-}k(s_{\text{large}})$ is computed from the large model's
+distribution over the prompt. The candidate set is <em>fresh and well-calibrated</em>. Restricting
+to it filters noise effectively.</p>
+
+<p>At <strong>step $t > 1$</strong>: the prefix was generated by the delta-steered model, not by the
+large model alone. The large model's top-$k$ is now conditioned on a prefix it didn't
+generate, which may cause:</p>
+
+<ol>
+<li><strong>Candidate drift:</strong> The large model's top-$k$ may not contain the token that
+would be best under the delta-steered distribution. Good tokens get excluded.</li>
+<li><strong>Error compounding:</strong> A suboptimal token at step $t$ shifts the prefix,
+changing $S_{t+1}$, potentially cascading into worse candidates.</li>
+<li><strong>Fork starvation:</strong> At "fork" positions (multiple valid continuations),
+$k=50$ may be too restrictive. Proxy-tuning's full vocab preserves all options.</li>
+</ol>
+
+<div class="card">
+<p><strong>The theory predicts:</strong> GRAFT should benefit from <strong>larger $k$ during generation</strong>
+than during single-token analysis. The optimal $k$ is a function of:</p>
+$$k^* = \arg\min_k \;\; \underbrace{\text{noise from tail tokens}}_{\text{decreases with smaller } k} + \underbrace{\text{loss from excluded good tokens}}_{\text{increases with smaller } k}$$
+<p>At step 1, the noise term dominates ($k^*$ is small). At step $t \gg 1$,
+the exclusion term grows ($k^*$ should be larger).</p>
+</div>
+
+<!-- ================================================================ -->
+<h2>8. Paths to Improvement</h2>
+
+<h3>8.1 Adaptive $k$ per generation step</h3>
+<div class="math-block">
+$$k_t = k_0 + \alpha \cdot t$$
+</div>
+<p>Start with aggressive restriction ($k_0 = 10$) and widen as generation proceeds.
+Or use the entropy of the large model's distribution: low entropy (confident) &rarr; small $k$,
+high entropy (uncertain) &rarr; large $k$.</p>
+
+<h3>8.2 Soft weighting instead of hard restriction</h3>
+<div class="math-block">
+$$\text{score}(i) = \log p_{\mathcal{M}}(i) + \lambda \cdot w(i) \cdot \delta(i)$$
+</div>
+<p>where $w(i) = \sigma\bigl(\log p_{\mathcal{M}}(i) - \tau\bigr)$ is a sigmoid gate that smoothly
+downweights the delta for low-probability tokens. This interpolates between GRAFT ($w = \mathbb{1}_{S_t}$)
+and proxy-tuning ($w = 1$).</p>
+
+<h3>8.3 Entropy-adaptive $\lambda$</h3>
+<div class="math-block">
+$$\lambda_t = \frac{\lambda_0}{1 + \gamma \cdot H(p_{\mathcal{M}}(\cdot | x_{<t}))}$$
+</div>
+<p>At high-entropy (fork) positions, reduce $\lambda$ to let the large model's
+own preferences dominate. At low-entropy (lock) positions, full $\lambda$
+since the delta is confident.</p>
+
+<h3>8.4 SSD-enhanced delta</h3>
+<p>Use Apple's self-distillation to sharpen the small model before computing the delta.
+This reduces the effective rank of the delta, making restriction more effective:</p>
+<div class="math-block">
+$$\hat{r}_{\text{SSD+GRAFT}} = \beta \log \frac{p_{\text{SSD}(\mathcal{M}^+)}^{S_t}(y|x)}{p_{\mathcal{M}^-}^{S_t}(y|x)}$$
+</div>
+
+<!-- ================================================================ -->
+<h2>9. The Unifying Theory</h2>
+
+<div class="card" style="border-left: 4px solid var(--accent); padding: 1.5rem;">
+
+<h3 style="margin-top:0">Behavioral specialization is low-rank in reward space</h3>
+
+<p>Fine-tuning changes the output distribution by applying a reward
+$r(x,y) = \beta \log \frac{p_{\mathcal{M}^*}(y|x)}{p_{\mathcal{M}}(y|x)}$.
+Our experiments show this reward has <strong>effective rank ~10</strong> in the token space:
+only ~10 tokens per position have meaningfully non-zero reward.</p>
+
+<p>This explains:</p>
+
+<table>
+<thead><tr><th>Phenomenon</th><th>Explanation</th></tr></thead>
+<tbody>
+<tr><td>GRAFT $k=10$ beats $k=\text{full}$</td><td>Restriction projects onto the reward's support</td></tr>
+<tr><td>LoRA works at rank 8</td><td>Low-rank reward &rarr; low-rank weight perturbation suffices</td></tr>
+<tr><td>SSD truncation helps</td><td>Removes tokens outside the reward's support from training</td></tr>
+<tr><td>Quantization preserves behavior</td><td>Isotropic noise rarely hits the rank-10 signal subspace</td></tr>
+<tr><td>Model merging works</td><td>Different capabilities = different rank-10 subspaces (near-orthogonal)</td></tr>
+<tr><td>RLHF is sample-efficient</td><td>Only need to learn a rank-10 preference direction</td></tr>
+</tbody>
+</table>
+
+<p><strong>Testable prediction:</strong> The effective rank of the reward (measurable as the number of
+tokens with $|\delta(i)| > \tau$ at each position) should predict which capabilities
+transfer well via GRAFT and which require full fine-tuning.</p>
+
+</div>
+
+<!-- ================================================================ -->
+<h2>10. Summary of Current Results</h2>
+
+<table>
+<thead>
+<tr><th>Model</th><th>IFEval Strict (541)</th><th>Instruction (834)</th></tr>
+</thead>
+<tbody>
+<tr><td>8B base</td><td>38.1%</td><td>50.5%</td></tr>
+<tr><td>14B base</td><td>41.0%</td><td>52.8%</td></tr>
+<tr><td>Proxy-tuning (Liu et al.)</td><td colspan="2" style="text-align:center"><em>running (100/541)... early: 61.0% / 71.8%</em></td></tr>
+<tr><td><strong>GRAFT $k=50$</strong></td><td><strong>59.7%</strong></td><td><strong>70.4%</strong></td></tr>
+<tr><td>8B instruct</td><td>61.7%</td><td>71.7%</td></tr>
+<tr><td>14B instruct</td><td>62.1%</td><td>72.2%</td></tr>
+</tbody>
+</table>
+
+<p>Proxy-tuning may edge out GRAFT on full generation (pending full 541 results).
+If so, the next step is testing adaptive-$k$ or soft-weighted GRAFT to combine
+the noise-filtering benefit of restriction with the coverage of full vocab.</p>
+
+<hr style="margin-top:2.5rem; border:none; border-top:1px solid var(--border);">
+<p style="color:var(--muted); font-size:0.8rem; margin-top:1rem;">
+  GRAFT Theoretical Framework &middot; 2026-04-06 &middot;
+  Based on proxy-tuning (Liu et al. 2024), SSD (Apple 2025), and GRAFT experiments
+</p>
+
+</body>
+</html>

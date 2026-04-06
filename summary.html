@@ -786,14 +786,17 @@ using only the 8B instruct delta. It beats both instruct models on change_case, 
   <tbody>
     <tr><td>8B base</td><td>206/541</td><td>38.1%</td></tr>
     <tr><td>14B base</td><td>222/541</td><td>41.0%</td></tr>
-    <tr><td><strong>Delta-steered 14B (GRAFT)</strong></td><td><strong>323/541</strong></td><td><strong>59.7%</strong></td></tr>
+    <tr><td>GRAFT $k=50$</td><td>323/541</td><td>59.7%</td></tr>
     <tr><td>8B instruct</td><td>334/541</td><td>61.7%</td></tr>
     <tr><td>14B instruct</td><td>336/541</td><td>62.1%</td></tr>
+    <tr><td><strong>Proxy-Tuning (Liu et al.)</strong></td><td><strong>338/541</strong></td><td><strong>62.5%</strong></td></tr>
   </tbody>
 </table>
 
-<p>GRAFT recovers <strong>96.1%</strong> of the 14B instruct's performance (59.7 / 62.1)
-using only the 8B instruct delta &mdash; no 14B fine-tuning.</p>
+<div class="card warning">
+<p><strong>Proxy-tuning edges out all models</strong> on full generation (62.5%), slightly beating even the
+14B instruct (62.1%). GRAFT trails by 2.8pp. See Section 12 for analysis of why and how to close the gap.</p>
+</div>
 
 <h3>11.3 Instruction-Level Accuracy</h3>
 <p>Each individual constraint scored independently.</p>
@@ -803,41 +806,48 @@ using only the 8B instruct delta &mdash; no 14B fine-tuning.</p>
   <tbody>
     <tr><td>8B base</td><td>421/834</td><td>50.5%</td></tr>
     <tr><td>14B base</td><td>440/834</td><td>52.8%</td></tr>
-    <tr><td><strong>Delta-steered 14B (GRAFT)</strong></td><td><strong>587/834</strong></td><td><strong>70.4%</strong></td></tr>
+    <tr><td>GRAFT $k=50$</td><td>587/834</td><td>70.4%</td></tr>
     <tr><td>8B instruct</td><td>598/834</td><td>71.7%</td></tr>
     <tr><td>14B instruct</td><td>602/834</td><td>72.2%</td></tr>
+    <tr><td><strong>Proxy-Tuning</strong></td><td><strong>605/834</strong></td><td><strong>72.5%</strong></td></tr>
   </tbody>
 </table>
 
 <h3>11.4 Per-Category Breakdown</h3>
 
 <table style="font-size:0.85rem">
-  <thead><tr><th>Category</th><th>N</th><th>8B base</th><th>14B base</th><th>Delta</th><th>8B inst</th><th>14B inst</th></tr></thead>
+  <thead><tr><th>Category</th><th>N</th><th>8B base</th><th>14B base</th><th>GRAFT</th><th>Proxy</th><th>8B inst</th><th>14B inst</th></tr></thead>
   <tbody>
-    <tr><td>change_case</td><td>89</td><td>29 (33%)</td><td>38 (43%)</td><td style="color:var(--green)"><strong>81 (91%)</strong></td><td>74 (83%)</td><td>78 (88%)</td></tr>
-    <tr><td>punctuation</td><td>66</td><td>16 (24%)</td><td>10 (15%)</td><td style="color:var(--green)"><strong>65 (98%)</strong></td><td>64 (97%)</td><td>65 (98%)</td></tr>
-    <tr><td>keywords</td><td>163</td><td>94 (58%)</td><td>91 (56%)</td><td><strong>121 (74%)</strong></td><td>118 (72%)</td><td>122 (75%)</td></tr>
-    <tr><td>combination</td><td>65</td><td>47 (72%)</td><td>55 (85%)</td><td style="color:var(--green)"><strong>62 (95%)</strong></td><td>61 (94%)</td><td>59 (91%)</td></tr>
-    <tr><td>detectable_content</td><td>53</td><td>27 (51%)</td><td>24 (45%)</td><td><strong>34 (64%)</strong></td><td>34 (64%)</td><td>33 (62%)</td></tr>
-    <tr><td>detectable_format</td><td>157</td><td>81 (52%)</td><td>91 (58%)</td><td>96 (61%)</td><td>97 (62%)</td><td>95 (61%)</td></tr>
-    <tr><td>language</td><td>31</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td></tr>
-    <tr><td>length_constraints</td><td>143</td><td>55 (38%)</td><td>59 (41%)</td><td>55 (38%)</td><td>78 (55%)</td><td>78 (55%)</td></tr>
-    <tr><td>startend</td><td>67</td><td>41 (61%)</td><td>41 (61%)</td><td><strong>42 (63%)</strong></td><td>41 (61%)</td><td>41 (61%)</td></tr>
+    <tr><td>change_case</td><td>89</td><td>29 (33%)</td><td>38 (43%)</td><td style="color:var(--green)"><strong>81 (91%)</strong></td><td>76 (85%)</td><td>74 (83%)</td><td>78 (88%)</td></tr>
+    <tr><td>punctuation</td><td>66</td><td>16 (24%)</td><td>10 (15%)</td><td>65 (98%)</td><td>65 (98%)</td><td>64 (97%)</td><td>65 (98%)</td></tr>
+    <tr><td>keywords</td><td>163</td><td>94 (58%)</td><td>91 (56%)</td><td>121 (74%)</td><td style="color:var(--green)"><strong>125 (77%)</strong></td><td>118 (72%)</td><td>122 (75%)</td></tr>
+    <tr><td>combination</td><td>65</td><td>47 (72%)</td><td>55 (85%)</td><td style="color:var(--green)"><strong>62 (95%)</strong></td><td>62 (95%)</td><td>61 (94%)</td><td>59 (91%)</td></tr>
+    <tr><td>detectable_content</td><td>53</td><td>27 (51%)</td><td>24 (45%)</td><td>34 (64%)</td><td>34 (64%)</td><td>34 (64%)</td><td>33 (62%)</td></tr>
+    <tr><td>detectable_format</td><td>157</td><td>81 (52%)</td><td>91 (58%)</td><td>96 (61%)</td><td>97 (62%)</td><td>97 (62%)</td><td>95 (61%)</td></tr>
+    <tr><td>language</td><td>31</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td><td>31 (100%)</td></tr>
+    <tr><td>length_constraints</td><td>143</td><td>55 (38%)</td><td>59 (41%)</td><td>55 (38%)</td><td style="color:var(--green)"><strong>74 (52%)</strong></td><td>78 (55%)</td><td>78 (55%)</td></tr>
+    <tr><td>startend</td><td>67</td><td>41 (61%)</td><td>41 (61%)</td><td style="color:var(--green)"><strong>42 (63%)</strong></td><td>41 (61%)</td><td>41 (61%)</td><td>41 (61%)</td></tr>
   </tbody>
 </table>
 
 <div class="card example">
-<p><strong>Delta <em>beats both instruct models</em> on several categories:</strong></p>
+<p><strong>GRAFT wins on precision tasks</strong> (per-token constraints):</p>
 <ul>
-  <li><strong>change_case</strong>: delta 91% vs 14B-inst 88% vs 8B-inst 83%</li>
-  <li><strong>combination</strong>: delta 95% vs 14B-inst 91% vs 8B-inst 94%</li>
-  <li><strong>startend</strong>: delta 63% vs both instruct models at 61%</li>
-  <li><strong>punctuation</strong>: delta 98% = 14B-inst 98%, both beat 8B-inst 97%</li>
+  <li><strong>change_case</strong>: GRAFT 91% vs Proxy 85% vs 14B-inst 88%</li>
+  <li><strong>combination</strong>: GRAFT 95% = Proxy 95%, both beat instruct models</li>
+  <li><strong>startend</strong>: GRAFT 63% vs Proxy 61% = instruct 61%</li>
 </ul>
 
-<p><strong>Where delta falls short:</strong> <code>length_constraints</code> (38% vs 55% for both instruct models).
-Length control requires planning ahead over many tokens &mdash; the per-token delta
-signal isn't sufficient. This may improve with $\lambda$ tuning or lookahead decoding.</p>
+<p><strong>Proxy-tuning wins on planning tasks</strong> (multi-token coordination):</p>
+<ul>
+  <li><strong>length_constraints</strong>: Proxy 52% vs GRAFT 38% (+14pp) &mdash; the dominant gap source</li>
+  <li><strong>keywords</strong>: Proxy 77% vs GRAFT 74% (+3pp)</li>
+</ul>
+
+<p><strong>Interpretation:</strong> GRAFT's top-$k$ restriction acts as a noise filter for per-token decisions (case, endings, punctuation),
+but removes candidates needed for multi-token planning (length, keyword placement). Proxy-tuning's full-vocab delta
+preserves these options. A <strong>sparse delta</strong> approach (restrict + sparsify within $S_t$) may combine the strengths of both.
+Experiment running.</p>
 </div>
 
 <h3>11.5 Examples: Delta Passes Where Base Fails</h3>
