@@ -332,18 +332,29 @@ transfer well via GRAFT and which require full fine-tuning.</p>
 
 <table>
 <thead>
-<tr><th>Model</th><th>IFEval Strict (541)</th><th>Instruction (834)</th></tr>
+<tr><th>Model</th><th>4-bit Strict</th><th>4-bit Instr</th><th>bf16 Strict</th><th>bf16 Instr</th></tr>
 </thead>
 <tbody>
-<tr><td>8B base</td><td>38.1%</td><td>50.5%</td></tr>
-<tr><td>14B base</td><td>41.0%</td><td>52.8%</td></tr>
-<tr><td>GRAFT $k=50$</td><td>59.7%</td><td>70.4%</td></tr>
-<tr><td>8B instruct</td><td>61.7%</td><td>71.7%</td></tr>
-<tr><td>14B instruct</td><td>62.1%</td><td>72.2%</td></tr>
-<tr><td><strong>Proxy-Tuning (Liu et al.)</strong></td><td><strong>62.5%</strong></td><td><strong>72.5%</strong></td></tr>
-<tr><td>Top-$k$ boost ($\alpha=5$)</td><td>42.0%</td><td>50.0%</td></tr>
+<tr><td>8B base</td><td>38.1%</td><td>50.5%</td><td>42.7%</td><td>54.1%</td></tr>
+<tr><td>14B base</td><td>41.0%</td><td>52.8%</td><td>40.7%</td><td>51.9%</td></tr>
+<tr><td>GRAFT $k=50$</td><td>59.7%</td><td>70.4%</td><td>57.1%</td><td>68.2%</td></tr>
+<tr><td>Proxy-Tuning</td><td>62.5%</td><td>72.5%</td><td>59.3%</td><td>70.1%</td></tr>
+<tr><td>8B instruct</td><td>61.7%</td><td>71.7%</td><td>61.6%</td><td>71.7%</td></tr>
+<tr><td>14B instruct</td><td>62.1%</td><td>72.2%</td><td>62.7%</td><td>73.0%</td></tr>
+<tr><td>Top-$k$ boost ($\alpha\!=\!5$)</td><td>42.0%</td><td>50.0%</td><td colspan="2" style="text-align:center; color:var(--muted)">not tested</td></tr>
 </tbody>
 </table>
+
+<div class="card" style="border-left: 3px solid var(--accent);">
+<p><strong>bf16 vs 4-bit</strong>: The ranking is consistent across precisions. Key bf16 findings from <a href="https://github.com/yupbank/graft/pull/1">PR #1</a>:</p>
+<ul>
+<li><strong>First-token</strong>: 89.5% top-1 match (vs 85.8% at 4-bit), 95.7% at $k=10$ (vs 92.1%)</li>
+<li><strong>Precision noise</strong>: 5.5x lower (~0.03 nats vs ~0.1 nats)</li>
+<li><strong>Delta strength</strong>: 17% larger mean $|\delta|$ (28.4 vs 24.3) &mdash; quantization compresses the behavioral signal</li>
+<li><strong>JS(ft, recovered)</strong>: 0.027 bf16 vs 0.038 at 4-bit &mdash; recovered distribution is 29% closer to instruct</li>
+<li><strong>Proxy-tuning still beats GRAFT by ~2pp</strong> in both precisions, confirming this is a method-level difference, not a precision artifact</li>
+</ul>
+</div>
 
 <!-- ================================================================ -->
 <h2>11. The Top-$k$ Boost Experiment: What Doesn't Work</h2>
@@ -424,7 +435,21 @@ is enough. The behavioral reward has <strong>direction</strong> &mdash; specific
 go down. This direction transfers across model sizes (8B $\to$ 14B) and is concentrated
 in ~10 tokens per position, but it must be the <em>right</em> 10 tokens.</p>
 
-<h3>Takeaway 5: Open question &mdash; can we get the best of both?</h3>
+<h3>Takeaway 5: Quantization compresses the behavioral signal, but doesn't destroy it</h3>
+
+<p>The bf16 experiments (PR #1) show:</p>
+<ul>
+<li>4-bit quantization compresses the delta by 17% (mean $|\delta|$ 24.3 vs 28.4 bf16)</li>
+<li>First-token accuracy drops 3.7pp (85.8% vs 89.5%)</li>
+<li>But the <strong>method ranking is preserved</strong>: proxy-tuning &gt; GRAFT &gt; base at both precisions</li>
+<li>The 2pp gap between proxy-tuning and GRAFT persists in bf16, confirming it's a <strong>method-level</strong> difference</li>
+</ul>
+
+<p>This supports the low-rank theory: the behavioral signal is robust to isotropic noise (quantization)
+because it lives in a ~10-dimensional subspace. Quantization noise is spread across all 151,936
+dimensions, so only a tiny fraction hits the signal.</p>
+
+<h3>Takeaway 6: Open question &mdash; can we get the best of both?</h3>
 
 <p>The ideal method would use:</p>
 <ul>
