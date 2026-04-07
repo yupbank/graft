@@ -13,3 +13,5 @@ build/
 *.mlx
 mlx_models/
 models/
+data/
+adapters/
