@@ -432,8 +432,7 @@ The gap comes almost entirely from <code>length_constraints</code> (proxy 52% vs
 
 <p>The top-$k$ boost experiment disproves the hypothesis that "just sharpen the distribution"
 is enough. The behavioral reward has <strong>direction</strong> &mdash; specific tokens go up, specific tokens
-go down. This direction transfers across model sizes (8B $\to$ 14B) and is concentrated
-in ~10 tokens per position, but it must be the <em>right</em> 10 tokens.</p>
+go down. This direction transfers across model sizes (8B $\to$ 14B).</p>
 
 <h3>Takeaway 5: Quantization compresses the behavioral signal, but doesn't destroy it</h3>
 
@@ -445,31 +444,128 @@ in ~10 tokens per position, but it must be the <em>right</em> 10 tokens.</p>
 <li>The 2pp gap between proxy-tuning and GRAFT persists in bf16, confirming it's a <strong>method-level</strong> difference</li>
 </ul>
 
-<p>This supports the low-rank theory: the behavioral signal is robust to isotropic noise (quantization)
-because it lives in a ~10-dimensional subspace. Quantization noise is spread across all 151,936
-dimensions, so only a tiny fraction hits the signal.</p>
+<!-- ================================================================ -->
+<h2>13. Hypotheses Tested and Disproven</h2>
 
-<h3>Takeaway 6: Open question &mdash; can we get the best of both?</h3>
+<h3 style="color:var(--red)">Disproven: Entropy-adaptive switching</h3>
 
-<p>The ideal method would use:</p>
+<p>We tested switching between GRAFT (at low-entropy "lock" positions) and proxy-tuning
+(at high-entropy "fork" positions) using the large model's entropy as a gate:</p>
+
+$$k_t = \begin{cases} 50 & \text{if } H(p_{\text{large}}) < \tau \\ |V| & \text{if } H(p_{\text{large}}) \geq \tau \end{cases}$$
+
+<table>
+<thead><tr><th>Config</th><th>Prompt Strict</th><th>Instruction</th><th>% GRAFT steps</th></tr></thead>
+<tbody>
+<tr><td><strong>Proxy-Tuning (baseline)</strong></td><td><strong>56.0%</strong></td><td><strong>67.1%</strong></td><td>0%</td></tr>
+<tr><td>GRAFT k=50 (baseline)</td><td>38.0%</td><td>46.1%</td><td>100%</td></tr>
+<tr><td>Adaptive $\tau=1.0$</td><td>40.0%</td><td>50.0%</td><td>26%</td></tr>
+<tr><td>Adaptive $\tau=2.0$</td><td>32.0%</td><td>43.4%</td><td>48%</td></tr>
+<tr><td>Adaptive $\tau=3.0$</td><td>36.0%</td><td>46.1%</td><td>67%</td></tr>
+<tr><td>Adaptive $\tau=4.0$</td><td>34.0%</td><td>40.8%</td><td>84%</td></tr>
+<tr><td>Adaptive $\tau=5.0$</td><td>36.0%</td><td>43.4%</td><td>94%</td></tr>
+</tbody>
+</table>
+
+<div class="card" style="border-left: 3px solid var(--red);">
+<p><strong>Result: every adaptive config is worse than pure proxy-tuning.</strong>
+More GRAFT steps = worse performance. The entropy-based gate does not identify
+positions where restriction helps. Even at $\tau=1.0$ (only 26% GRAFT), quality drops 16pp.</p>
+
+<p><strong>Why it failed:</strong> GRAFT's restriction doesn't just filter noise at individual positions &mdash;
+it changes the <em>trajectory</em> of generation. A single restricted step can steer the sequence
+into a different region of text space, and subsequent proxy-tuning steps can't recover.
+The damage from restriction cascades.</p>
+</div>
+
+<h3 style="color:var(--red)">Disproven: The behavioral delta is low-rank</h3>
+
+<p>We hypothesized that the instruct-vs-base delta is concentrated in ~10 tokens per position.
+The delta rank analysis on 541 IFEval prompts shows the opposite:</p>
+
+<table>
+<thead><tr><th>Measure</th><th>Value</th><th>Interpretation</th></tr></thead>
+<tbody>
+<tr><td>Tokens with $|\delta| > 0.01$</td><td>151,927 / 151,936</td><td>Nearly ALL tokens have non-zero delta</td></tr>
+<tr><td>Tokens with $|\delta| > 1.0$</td><td>151,768</td><td>99.9% of vocab has $|\delta| > 1$</td></tr>
+<tr><td>Tokens with $|\delta| > 5.0$</td><td>150,469</td><td>99.0% even at threshold 5</td></tr>
+<tr><td>Mass in top-10 tokens</td><td>0.000</td><td>Top-10 captures ~0% of total $|\delta|$ mass</td></tr>
+<tr><td>Mass in top-200 tokens</td><td>0.002</td><td>Top-200 captures 0.2%</td></tr>
+<tr><td>Delta entropy</td><td>11.91 / 11.93 max</td><td>Nearly uniform across vocabulary</td></tr>
+</tbody>
+</table>
+
+<div class="card" style="border-left: 3px solid var(--red);">
+<p><strong>The delta is NOT low-rank.</strong> It is spread nearly uniformly across the entire vocabulary.
+The instruction-following behavioral change affects virtually every token's probability,
+not just a handful.</p>
+
+<p><strong>This means:</strong></p>
 <ul>
-<li>Full vocabulary (like proxy-tuning) for coverage at fork positions</li>
-<li>Noise filtering (like GRAFT) for precision at lock positions</li>
-<li>An automatic way to detect lock vs fork (perhaps via entropy of $p_{\text{large}}$)</li>
+<li>The "low-rank behavioral subspace" theory is <strong>wrong</strong> for full-vocab deltas</li>
+<li>Proxy-tuning's superiority over GRAFT makes sense: the full vocabulary carries real signal</li>
+<li>GRAFT's restriction discards 99.97% of the delta mass (keeping only top-50 out of 151,936)</li>
+<li>The fact that GRAFT works <em>at all</em> (59.7% vs 62.5%) despite discarding 99.97% of the signal
+is surprising &mdash; the top-$k$ tokens must carry disproportionately <em>important</em> signal
+even if they don't carry disproportionate <em>mass</em></li>
 </ul>
+</div>
 
-<p>Candidate approach: <strong>entropy-adaptive restriction</strong></p>
+<h3>Revised understanding</h3>
 
-$$k_t = \begin{cases} 10 & \text{if } H(p_{\text{large}}) < \tau \quad \text{(lock: model is confident)} \\ |V| & \text{if } H(p_{\text{large}}) \geq \tau \quad \text{(fork: model is uncertain)} \end{cases}$$
+<p>The delta is <strong>full-rank but importance-weighted</strong>. The total $|\delta|$ mass is spread
+uniformly, but the <em>functional importance</em> is not. The top-$k$ tokens by $p_{\text{large}}$
+are the ones the model is actually deciding between &mdash; shifting their probabilities has
+outsized impact on generation, even though the delta on tail tokens is equally large in magnitude.</p>
 
-<p>This would apply GRAFT's restriction where it helps (low-entropy/precision tokens)
-and fall back to proxy-tuning where restriction hurts (high-entropy/planning tokens).</p>
+<p>This explains all our results:</p>
+
+<table>
+<thead><tr><th>Finding</th><th>Explanation under revised theory</th></tr></thead>
+<tbody>
+<tr><td>GRAFT first-token 92.1% at $k=10$</td><td>Top-10 are the decision-relevant tokens; delta there is functionally important despite small mass fraction</td></tr>
+<tr><td>Proxy-tuning beats GRAFT at generation</td><td>Full-vocab delta has real signal everywhere; discarding 99.97% of it costs something</td></tr>
+<tr><td>Entropy-adaptive doesn't help</td><td>The damage from restriction is about trajectory, not individual token noise</td></tr>
+<tr><td>GRAFT wins change_case, startend</td><td>For per-token precision tasks, only the top candidate matters &mdash; mass doesn't</td></tr>
+<tr><td>Proxy wins length_constraints</td><td>Planning requires the full distribution shape, not just the top tokens</td></tr>
+</tbody>
+</table>
+
+</div>
+
+<!-- ================================================================ -->
+<h2>14. Final Summary</h2>
+
+<div class="card" style="border-left: 4px solid var(--accent); padding: 1.5rem;">
+
+<p>Both proxy-tuning and GRAFT demonstrate that a large base model can be made to follow
+instructions at inference time, with zero fine-tuning, using only the behavioral delta
+from a smaller model pair. On 541 IFEval prompts:</p>
+
+<table>
+<thead><tr><th>Model</th><th>Prompt Strict</th><th>Gap closed</th></tr></thead>
+<tbody>
+<tr><td>14B base</td><td>41.0%</td><td>0%</td></tr>
+<tr><td>GRAFT $k=50$</td><td>59.7%</td><td>87%</td></tr>
+<tr><td><strong>Proxy-tuning</strong></td><td><strong>62.5%</strong></td><td><strong>100%+</strong></td></tr>
+<tr><td>14B instruct</td><td>62.1%</td><td>100%</td></tr>
+</tbody>
+</table>
+
+<p><strong>Proxy-tuning is the better method for generation.</strong> The full-vocabulary logit delta
+carries meaningful signal across all 151,936 tokens, and GRAFT's restriction discards
+most of it. However, GRAFT achieves 87% of the gap with only 0.03% of the vocabulary,
+showing that the decision-relevant signal is highly concentrated even though the mass is not.</p>
+
+<p><strong>The practical recommendation:</strong> use proxy-tuning for generation quality.
+Use GRAFT only when you need per-token precision (case control, punctuation)
+or when you only have access to top-$k$ logits from the small models (API constraints).</p>
 
 </div>
 
 <hr style="margin-top:2.5rem; border:none; border-top:1px solid var(--border);">
 <p style="color:var(--muted); font-size:0.8rem; margin-top:1rem;">
-  GRAFT Theoretical Framework &middot; 2026-04-06 &middot;
+  GRAFT Theoretical Framework &middot; 2026-04-07 &middot;
   Based on proxy-tuning (Liu et al. 2024), SSD (Apple 2025), and GRAFT experiments
 </p>
 
