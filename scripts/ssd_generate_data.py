@@ -31,11 +31,11 @@ MODEL_4B_BASE = "mlx-community/Qwen3-4B-4bit"
 MODEL_06B_INSTRUCT = str(PROJECT_DIR / "models" / "Qwen3-0.6B-Instruct-4bit")
 MODEL_06B_BASE = "mlx-community/Qwen3-0.6B-4bit"
 
-# Generation params (following SSD paper)
+# Generation params
 TEMP = 1.0
 TOP_P = 0.95
-MAX_TOKENS = 1024
-N_SOLUTIONS = 10
+MAX_TOKENS = 256
+N_SOLUTIONS = 3
 CFG_ALPHA = 1.0
 
 mx.random.seed(42)
@@ -310,11 +310,10 @@ def generate_condition(
             gc.collect()
             mx.clear_cache()
 
-        if (i + 1) % 10 == 0:
-            elapsed = time.time() - t0
-            rate = (i + 1) / elapsed * 60
-            print(f"    [{i + 1}/{len(prompts)}] ({rate:.1f} prompts/min)")
-            _flush()
+        elapsed = time.time() - t0
+        rate = (i + 1) / elapsed * 60
+        print(f"    [{i + 1}/{len(prompts)}] {N_SOLUTIONS} sols, ({rate:.1f} prompts/min)")
+        _flush()
 
     return results
 
@@ -348,61 +347,14 @@ def main() -> None:
     ssd_data = generate_condition("ssd", prompts, tokenizer, eos_id, inst=inst_model)
     save_jsonl(ssd_data, str(PROJECT_DIR / "data" / "ssd" / "train.jsonl"))
 
-    # Keep inst_model for CFG-SSD
-    # === Condition 2: CFG-SSD (4B-instruct + 4B-base) ===
-    print(f"\n=== CFG-SSD: Loading {MODEL_4B_BASE} ===")
-    _flush()
-    base_model, _ = load_model(MODEL_4B_BASE)
-    print(f"  Loaded. {mx.get_peak_memory() / 1e9:.1f} GB")
-    _flush()
-
-    print("  Generating CFG-SSD data...")
-    _flush()
-    cfg_data = generate_condition(
-        "cfg_ssd",
-        prompts,
-        tokenizer,
-        eos_id,
-        inst=inst_model,
-        base=base_model,
-    )
-    save_jsonl(cfg_data, str(PROJECT_DIR / "data" / "cfg_ssd" / "train.jsonl"))
-
-    # Unload both 4B models
-    unload(inst_model, base_model)
-
-    # === Condition 3: Proxy-SSD (4B-instruct + 0.6B pair) ===
-    print("\n=== Proxy-SSD: Loading 4B-instruct + 0.6B pair ===")
-    _flush()
-    inst_model, tokenizer = load_model(MODEL_4B_INSTRUCT)
-    small_inst, _ = load_model(MODEL_06B_INSTRUCT)
-    small_base, _ = load_model(MODEL_06B_BASE)
-    print(f"  Loaded. {mx.get_peak_memory() / 1e9:.1f} GB")
-    _flush()
-
-    print("  Generating Proxy-SSD data...")
-    _flush()
-    proxy_data = generate_condition(
-        "proxy_ssd",
-        prompts,
-        tokenizer,
-        eos_id,
-        inst=inst_model,
-        small_inst=small_inst,
-        small_base=small_base,
-    )
-    save_jsonl(proxy_data, str(PROJECT_DIR / "data" / "proxy_ssd" / "train.jsonl"))
-
-    unload(inst_model, small_inst, small_base)
+    unload(inst_model)
 
     # Summary
     print(f"\n{'=' * 60}")
     print("DATA GENERATION COMPLETE")
     print(f"{'=' * 60}")
-    print(f"  SSD:       {len(ssd_data)} examples")
-    print(f"  CFG-SSD:   {len(cfg_data)} examples")
-    print(f"  Proxy-SSD: {len(proxy_data)} examples")
-    print(f"  Prompts:   {len(prompts)}")
+    print(f"  SSD: {len(ssd_data)} examples")
+    print(f"  Prompts: {len(prompts)}")
     print(f"  Solutions per prompt: {N_SOLUTIONS}")
 
 
