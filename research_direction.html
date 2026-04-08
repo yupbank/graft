@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRAFT — Research Direction: Probability-Weighted Reward Concentration</title>
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+<style>
+  :root {
+    --bg: #fafafa; --fg: #1a1a1a; --accent: #2563eb; --green: #16a34a;
+    --red: #dc2626; --card: #fff; --border: #e5e7eb; --code-bg: #f3f4f6; --muted: #6b7280;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a; --fg: #e2e8f0; --accent: #60a5fa; --green: #4ade80;
+      --red: #f87171; --card: #1e293b; --border: #334155; --code-bg: #1e293b; --muted: #94a3b8;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg); color: var(--fg); line-height: 1.8;
+    max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.25rem; margin: 2rem 0 0.75rem; border-bottom: 2px solid var(--accent); padding-bottom: 0.3rem; }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+  p, li { margin-bottom: 0.6rem; }
+  ul, ol { padding-left: 1.5rem; }
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1.25rem 1.5rem; margin: 1rem 0;
+  }
+  .math-block {
+    background: var(--card); border-left: 3px solid var(--accent);
+    padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 6px 6px 0;
+    overflow-x: auto;
+  }
+  .insight { border-left: 3px solid var(--green); }
+  .problem { border-left: 3px solid var(--red); }
+  table {
+    width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem;
+  }
+  th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; background: var(--code-bg); }
+</style>
+</head>
+<body>
+
+<h1>Research Direction: Probability-Weighted Reward Concentration</h1>
+<p class="subtitle">The one theoretical finding from GRAFT that could be a paper</p>
+
+<!-- ================================================================ -->
+<h2>1. The Puzzle</h2>
+
+<p>We measured the behavioral delta between an instruct model and its base across 151,936 tokens.
+Two facts that seem contradictory:</p>
+
+<div class="card problem">
+<p><strong>Fact 1: The delta is everywhere.</strong></p>
+<p>99.9% of tokens have $|\delta(y)| > 1$. The delta entropy is 11.91 out of max 11.93.
+Instruction-tuning changes the probability of <em>virtually every token</em> in the vocabulary.</p>
+</div>
+
+<div class="card insight">
+<p><strong>Fact 2: Restricting to top-50 tokens recovers 87% of the effect.</strong></p>
+<p>GRAFT uses only the top-50 tokens from the large model (0.03% of vocabulary) and achieves
+59.7% vs proxy-tuning's 62.5% on IFEval. It discards 99.97% of the delta mass but keeps
+most of the functional impact.</p>
+</div>
+
+<p><strong>How can 0.03% of the vocabulary carry 87% of the effect if the delta is uniformly distributed?</strong></p>
+
+<!-- ================================================================ -->
+<h2>2. The Key Insight: Probability Weighting</h2>
+
+<p>The raw delta $|\delta(y)|$ is uniform. But generation doesn't treat all tokens equally &mdash;
+it only cares about tokens the model actually considers generating. The <strong>probability-weighted
+delta</strong> is concentrated:</p>
+
+<div class="math-block">
+$$\text{Raw (unweighted):} \quad \sum_{y \in V} |\delta(y)| \approx \text{spread across all 151,936 tokens}$$
+</div>
+
+<div class="math-block">
+$$\text{Functional (probability-weighted):} \quad \sum_{y \in V} p_{\text{large}}(y) \cdot |\delta(y)| \approx \text{concentrated in top-50}$$
+</div>
+
+<p>The large model assigns $p > 0.01$ to maybe 50 tokens. All other tokens have $p \approx 0$.
+Even though $|\delta(y)|$ is large for those tokens, $p_{\text{large}}(y) \cdot |\delta(y)| \approx 0$
+because $p$ is near zero. The delta on token #10,000 doesn't matter because that token was
+never going to be generated anyway.</p>
+
+<!-- ================================================================ -->
+<h2>3. Formalization</h2>
+
+<h3>3.1 The Reward Framework</h3>
+
+<p>Any fine-tuned model implicitly optimizes a reward (Korbak et al., 2022):</p>
+
+<div class="math-block">
+$$r(y \mid x) = \beta \log \frac{p_{\text{instruct}}(y \mid x)}{p_{\text{base}}(y \mid x)}$$
+</div>
+
+<p>Proxy-tuning transfers this reward from a small pair to a large model:</p>
+
+<div class="math-block">
+$$p_{\text{steered}}(y \mid x) \propto p_{\text{large}}(y \mid x) \cdot \exp\!\left(\frac{1}{\beta} \hat{r}(y \mid x)\right)$$
+</div>
+
+<p>where $\hat{r}(y \mid x) = \beta \log \frac{p_{\text{small-inst}}(y \mid x)}{p_{\text{small-base}}(y \mid x)}$ is the proxy reward.</p>
+
+<h3>3.2 The Concentration Conjecture</h3>
+
+<p><strong>Conjecture:</strong> For models from the same family, the probability-weighted reward is
+concentrated in the top-$k$:</p>
+
+<div class="math-block">
+$$\frac{\sum_{y \in \text{top-}k(p_{\text{large}})} p_{\text{large}}(y) \cdot |\hat{r}(y)|}{\sum_{y \in V} p_{\text{large}}(y) \cdot |\hat{r}(y)|} \;\geq\; 1 - \epsilon(k)$$
+</div>
+
+<p>where $\epsilon(k)$ decays rapidly. Our empirics suggest $\epsilon(50) \leq 0.13$ (87% recovery).</p>
+
+<h3>3.3 Why This Might Be Provable</h3>
+
+<p>The key property: $p_{\text{large}}(y)$ is sharply peaked. For a typical next-token distribution:</p>
+
+<ul>
+<li>Top-1 token: $p \approx 0.5\text{-}0.9$</li>
+<li>Top-10 tokens: cumulative $p \approx 0.95$</li>
+<li>Top-50 tokens: cumulative $p \approx 0.99$</li>
+<li>Remaining 151,886 tokens: cumulative $p \approx 0.01$</li>
+</ul>
+
+<p>So even if $|\hat{r}(y)|$ is the same for all tokens, the probability weighting
+ensures 99% of the functional reward mass sits in the top-50. The "tail" of 151,886
+tokens contributes at most 1% of the weighted reward, regardless of how large
+their individual $|\hat{r}|$ values are.</p>
+
+<div class="math-block">
+$$\sum_{y \notin \text{top-}k} p_{\text{large}}(y) \cdot |\hat{r}(y)| \;\leq\; \underbrace{\left(\sum_{y \notin \text{top-}k} p_{\text{large}}(y)\right)}_{\leq\, 1 - \sum_{\text{top-}k} p_{\text{large}}} \cdot \max_{y} |\hat{r}(y)|$$
+</div>
+
+<p>If $\sum_{\text{top-}k} p_{\text{large}} \geq 1 - \alpha$ (the top-$k$ covers $1-\alpha$ of the probability mass),
+then the tail reward is bounded by $\alpha \cdot \|\hat{r}\|_\infty$. For $k=50$ and typical LLM
+distributions, $\alpha \leq 0.01$.</p>
+
+<!-- ================================================================ -->
+<h2>4. What This Explains</h2>
+
+<table>
+<thead><tr><th>Empirical Finding</th><th>Explanation</th></tr></thead>
+<tbody>
+<tr>
+  <td>GRAFT k=50 closes 87% of the gap</td>
+  <td>Top-50 captures $\geq 99\%$ of probability mass, hence $\geq 87\%$ of probability-weighted reward</td>
+</tr>
+<tr>
+  <td>Proxy-tuning (full vocab) is 3pp better</td>
+  <td>The remaining 1% probability mass in the tail still contributes some reward &mdash; small but nonzero</td>
+</tr>
+<tr>
+  <td>Raw delta looks full-rank</td>
+  <td>Unweighted $|\delta|$ is uniform &mdash; correct, but irrelevant to generation</td>
+</tr>
+<tr>
+  <td>Top-k boost (uniform constant) doesn't work</td>
+  <td>Uniform boost $\neq$ reward. The reward has direction (which tokens up, which down). A constant doesn't carry directional information.</td>
+</tr>
+<tr>
+  <td>Instruct models are immune to steering</td>
+  <td>Instruct models have even more peaked distributions ($p_{\text{top-1}} \approx 1.0$). The "consideration set" is 1 token, not 50. No room for the delta to operate.</td>
+</tr>
+<tr>
+  <td>GRAFT wins on change_case but loses on length</td>
+  <td>Case decisions are local (one token matters) &mdash; top-k captures it. Length planning requires coordination across many tokens &mdash; the probability-weighted reward at any single step doesn't capture the multi-step constraint.</td>
+</tr>
+</tbody>
+</table>
+
+<!-- ================================================================ -->
+<h2>5. What's Needed for a Paper</h2>
+
+<h3>5.1 Theory</h3>
+<ol>
+<li>Formalize the probability-weighted reward concentration as a theorem</li>
+<li>Prove a bound: $\epsilon(k) \leq f(\alpha, \|\hat{r}\|_\infty)$ where $\alpha$ = tail probability mass</li>
+<li>Show this bound is tight (construct a case where the bound is achieved)</li>
+<li>Derive the optimal $k^*$ as a function of the distribution's entropy</li>
+</ol>
+
+<h3>5.2 Experiments</h3>
+<ol>
+<li><strong>Multiple model families:</strong> Qwen3, Llama3, Gemma &mdash; does the concentration hold universally?</li>
+<li><strong>Measure the bound empirically:</strong> plot $\epsilon(k)$ vs $k$ across 541 prompts, show it matches the theoretical bound</li>
+<li><strong>Predict GRAFT/proxy gap:</strong> use the bound to predict the gap for each prompt, verify correlation</li>
+<li><strong>Different tasks:</strong> code generation, math reasoning &mdash; does the bound change?</li>
+</ol>
+
+<h3>5.3 Story</h3>
+
+<div class="card insight">
+<p><strong>Paper title idea:</strong> "Why Behavioral Transfer Works with 0.03% of the Vocabulary:
+Probability-Weighted Reward Concentration in Language Model Steering"</p>
+
+<p><strong>One-paragraph pitch:</strong> Proxy-tuning steers large language models at inference time by
+adding a behavioral delta from a smaller model pair. The delta is full-rank across the
+vocabulary, yet restricting it to just 50 tokens (0.03%) recovers 87% of the effect.
+We explain this via <em>probability-weighted reward concentration</em>: while the raw reward
+is uniform, the probability-weighted reward &mdash; the only part that affects generation &mdash;
+is sharply concentrated in the model's top-$k$ tokens. We prove a bound showing the
+concentration follows directly from the peaked nature of LLM output distributions, and
+verify it across three model families and two benchmarks.</p>
+</div>
+
+<!-- ================================================================ -->
+<h2>6. Honest Assessment</h2>
+
+<table>
+<thead><tr><th>Strength</th><th>Weakness</th></tr></thead>
+<tbody>
+<tr>
+  <td>Explains a surprising empirical finding</td>
+  <td>The bound might be "obvious" to reviewers (top-k covers most probability mass &mdash; of course the weighted reward is there too)</td>
+</tr>
+<tr>
+  <td>Connects reward theory to practical method design</td>
+  <td>GRAFT itself doesn't beat proxy-tuning &mdash; the theory explains why but doesn't lead to a better method</td>
+</tr>
+<tr>
+  <td>Extensive empirics across models and methods</td>
+  <td>Only tested on Qwen3 family so far &mdash; needs Llama, Gemma</td>
+</tr>
+<tr>
+  <td>The 87% recovery from 0.03% is a striking number</td>
+  <td>It's a characterization paper, not a methods paper &mdash; harder to sell at NeurIPS</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Best venue:</strong> ICLR or COLM (theory + empirics). NeurIPS possible if the bound is
+non-trivial and the multi-family experiments are strong. Workshop paper is safe.</p>
+
+</body>
+</html>
