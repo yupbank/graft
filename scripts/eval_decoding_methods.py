@@ -76,8 +76,11 @@ def _score_graft(lg: mx.array, rw: mx.array, ft: mx.array, k: int) -> mx.array:
     log_pr = s_raw_k - logsumexp(s_raw_k)
     delta = log_pf - log_pr
     log_p = log_softmax(lg)
-    scores = mx.full((vocab,), -1e9)
-    scores = scores.at[s_t].add(log_p[s_t] + delta + 1e9)
+    restricted_scores = log_p[s_t] + delta
+    # Build full-vocab scores: copy log_p, override top-k with delta-adjusted scores
+    scores = mx.full((vocab,), -1e30)
+    for j in range(ek):
+        scores[s_t[j]] = restricted_scores[j]
     return scores
 
 
@@ -190,8 +193,6 @@ def _apply_scorer(
 
 
 CONFIGS = [
-    ("proxy", {}, "Proxy-Tuning"),
-    ("graft", {"k": 50}, "GRAFT k=50"),
     ("cfg", {"w": 0.5}, "CFG w=0.5"),
     ("cfg", {"w": 1.0}, "CFG w=1.0"),
     ("cfg", {"w": 2.0}, "CFG w=2.0"),
@@ -275,21 +276,53 @@ def main() -> None:
 
         all_results[label] = results
         total = time.time() - t0_total
-        print(f"  Done in {total / 60:.1f} min\n")
+        print(f"  Done in {total / 60:.1f} min")
         _flush()
 
-    # Score all
-    import importlib.util
+        # Save + score after EACH config
+        output = str(PROJECT_DIR / "results" / "decoding_methods_experiment.json")
+        Path(output).parent.mkdir(parents=True, exist_ok=True)
+        with open(output, "w") as f:
+            json.dump(all_results, f, indent=2, ensure_ascii=False)
 
-    spec = importlib.util.spec_from_file_location("score", str(SCRIPT_DIR / "score_single.py"))
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+        import importlib.util
 
+        spec_mod = importlib.util.spec_from_file_location(
+            "score", str(SCRIPT_DIR / "score_single.py")
+        )
+        mod = importlib.util.module_from_spec(spec_mod)
+        spec_mod.loader.exec_module(mod)  # type: ignore[union-attr]
+
+        pp, ip, it = 0, 0, 0
+        for gen in results:
+            ex = ds[gen["prompt_idx"]]
+            ev = mod.evaluate_response(gen["response"], ex["instruction_id_list"], ex["kwargs"])
+            if ev["prompt_pass"]:
+                pp += 1
+            for r in ev["instructions"]:
+                if not r.get("skipped"):
+                    it += 1
+                    if r["pass"]:
+                        ip += 1
+        n = len(results)
+        pp_pct = 100 * pp / n
+        ip_pct = 100 * ip / it if it > 0 else 0
+        print(f"  >> {label}: {pp}/{n} ({pp_pct:.1f}%) prompt, {ip}/{it} ({ip_pct:.1f}%) instr")
+        _flush()
+        print()
+
+    # Final summary
     print(f"{'=' * 60}")
-    print("RESULTS")
+    print("FINAL RESULTS")
     print(f"{'=' * 60}\n")
     print(f"  {'Method':<22s} {'Prompt':>12s} {'Instruction':>12s}")
     print(f"  {'-' * 22} {'-' * 12} {'-' * 12}")
+
+    import importlib.util
+
+    spec_mod2 = importlib.util.spec_from_file_location("score", str(SCRIPT_DIR / "score_single.py"))
+    mod = importlib.util.module_from_spec(spec_mod2)
+    spec_mod2.loader.exec_module(mod)  # type: ignore[union-attr]
 
     for label, results in all_results.items():
         pp, ip, it = 0, 0, 0

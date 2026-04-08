@@ -76,9 +76,9 @@ def _score_graft(s_large: mx.array, s_raw: mx.array, s_ft: mx.array, k: int) -> 
     delta = log_pf - log_pr
 
     log_p = log_softmax(s_large)
-    scores = mx.full((vocab,), -1e9)
-    scores = scores.at[s_t].add(log_p[s_t] + delta - (-1e9))
-    return scores
+    restricted_scores = log_p[s_t] + delta
+    best_local = mx.argmax(restricted_scores)
+    return s_t[best_local]
 
 
 def _score_proxy(s_large: mx.array, s_raw: mx.array, s_ft: mx.array) -> mx.array:
