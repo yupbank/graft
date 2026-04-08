@@ -34,16 +34,13 @@ wins on planning tasks (length_constraints 52% vs GRAFT 38%).
 ## Experiment 2: Method Comparison
 
 **Proxy-tuning vs GRAFT**: Two differences — vocabulary (full vs top-k) and space
-(raw logits vs log-probabilities). Proxy-tuning wins overall by ~3pp.
+(raw logits vs log-probabilities). Proxy-tuning wins overall by ~3pp on 14B-base.
 
-**CFG, contrastive decoding, adaptive methods**: All worse than proxy-tuning on generation.
-No logit-level formula change improves on simple addition.
+**CFG, contrastive decoding**: Tested on 50 prompts. CFG w=0.5 and w=1.0 both scored
+52% (vs proxy 56%). No logit-level formula change improves on simple addition.
 
 **Top-k boost**: Adding a constant to top-k logits barely helps (+2pp vs proxy's +21pp).
 Behavioral steering requires directional signal, not uniform amplification.
-
-**Entropy-adaptive switching**: Using GRAFT at low-entropy positions and proxy at
-high-entropy: every config worse than pure proxy. Restriction damage cascades.
 
 ---
 
@@ -71,20 +68,24 @@ generated), even though the delta mass on them is negligible. This is why GRAFT 
 | Model | Prompt Strict | Instruction |
 |-------|:---:|:---:|
 | 4B-Instruct baseline | 58.0% | 68.5% |
+| 4B + 0.6B GRAFT k=50 | 58.2% | 68.8% |
 | 4B + 0.6B proxy delta | 58.4% | 68.6% |
-| 4B + 0.6B GRAFT k=50 | 35.1% | 46.9% |
 
-**Finding**: Proxy delta barely helps (+0.4pp) — the model already knows instruction-following.
-GRAFT **destroys** the model (-23pp) — restricting to top-k removes tokens the instruct model
-needs. The instruct model's distribution is already well-shaped; the restriction doesn't
-filter noise (there's no noise to filter), it removes signal.
+**Finding**: All three methods are within 0.4pp — the delta barely moves the needle
+on an already instruction-tuned model. The behavioral knowledge is already internalized;
+there's nothing new to transfer from the 0.6B pair.
+
+**Note on a scoring bug**: An earlier run showed GRAFT at 35.1% (-23pp) due to a bug
+in `mx.array.at[].add()` that collapsed all top-k scores to zero, causing degenerate
+`!#!#!#` output in 498/541 prompts. The fix (direct argmax on restricted scores)
+restored GRAFT to 58.2%, consistent with proxy-tuning. See commit `e055298` for details.
 
 ---
 
 ## Experiment 5: Self-Distillation (SSD)
 
 **Setup**: Fine-tune 4B-Instruct on its own outputs (SSD), CFG-amplified outputs, or
-proxy-tuned outputs via LoRA.
+proxy-tuned outputs via LoRA. 100 IFEval prompts, 3 solutions each, 300 iters LoRA.
 
 **IFEval Results (50 prompts)**:
 
@@ -101,6 +102,9 @@ not general instruction-following. The delta-steered variants are worse because
 they push the training distribution further from the model's own, causing LoRA
 to overfit to an alien distribution.
 
+**Note**: The SSD data generation used proxy-tuning (full-vocab logit arithmetic),
+not GRAFT, so it was not affected by the scoring bug.
+
 ---
 
 ## Experiment 6: Speculative Decoding
@@ -109,7 +113,8 @@ to overfit to an alien distribution.
 
 **Finding**: 74.7% acceptance rate — the draft model agrees with the delta-steered
 verifier 3/4 of the time. But naive implementation is slower than greedy (5.7 vs
-7.3 tok/s) due to KV cache rebuild on rejection. Needs proper cache snapshotting.
+7.3 tok/s) due to KV cache rebuild on rejection. With proper cache snapshotting,
+this would give a speedup.
 
 ---
 
@@ -119,28 +124,66 @@ All main experiments run at both precisions (PR #1). Key differences:
 - bf16 delta is 17% stronger (mean |delta| 28.4 vs 24.3)
 - bf16 first-token accuracy: 89.5% vs 85.8%
 - Method ranking preserved: proxy-tuning > GRAFT > base at both precisions
-- The ~3pp gap between proxy and GRAFT persists in bf16 (method-level, not precision)
+- The ~3pp gap between proxy and GRAFT on 14B persists in bf16 (method-level, not precision)
+
+---
+
+## Bug Discovery: MLX `at[].add()` Semantics
+
+During the project, we discovered a critical numerical bug in several GRAFT scripts.
+The pattern:
+
+```python
+scores = mx.full((vocab,), -1e9)
+scores = scores.at[s_t].add(log_p[s_t] + delta + 1e9)
+```
+
+was intended to set scores for top-k tokens while leaving others at -inf. But the
+`+1e9` offset cancelled the `-1e9` base AND erased the actual score differences
+between tokens — collapsing all top-k scores to approximately zero. This made token
+selection effectively random within the top-k, causing generation to degenerate into
+repetitive garbage (`!#!#!#!#!`).
+
+The fix: compute argmax directly on the restricted score set.
+
+```python
+restricted_scores = log_p[s_t] + delta
+token = s_t[mx.argmax(restricted_scores)]
+```
+
+This bug affected 4B-GRAFT results (35.1% → 58.2% after fix) and the entropy-adaptive
+experiment. The 14B-GRAFT results (59.7%) used a different code path and were not affected.
 
 ---
 
 ## What We Learned
 
 1. **Proxy-tuning is the best logit-level method for steering base models.** No formula
-   variation (CFG, contrastive decoding, GRAFT restriction, entropy-adaptive) beats
-   simple logit addition over the full vocabulary.
+   variation (CFG, contrastive decoding, GRAFT restriction) beats simple logit addition
+   over the full vocabulary. The gap is ~3pp on 14B-base (62.5% vs 59.7%).
 
-2. **The method's value is as a bridge.** When a new base model drops and the instruct
+2. **GRAFT (restricted delta) is a viable alternative when full-vocab access isn't
+   available.** It closes 87% of the gap despite using only 0.03% of the vocabulary.
+   On precision tasks (case, punctuation), it actually beats proxy-tuning.
+
+3. **The method's value is as a bridge.** When a new base model drops and the instruct
    variant isn't ready yet, proxy-tuning fills the gap at zero training cost. Once the
    instruct model exists, use it directly.
 
-3. **The behavioral delta is full-rank, not low-rank.** The entire vocabulary participates
+4. **Steering an already-tuned model has diminishing returns.** The delta from a smaller
+   pair adds almost nothing (+0.4pp) to an already instruction-tuned model. All three
+   methods (baseline, proxy, GRAFT) converge to ~58% on 4B-instruct.
+
+5. **The behavioral delta is full-rank, not low-rank.** The entire vocabulary participates
    in the behavioral shift from base to instruct. Restriction to top-k discards 99.97%
    of the delta mass but preserves 87% of the functional effect — the decision-relevant
    tokens carry disproportionate importance despite carrying negligible mass.
 
-4. **Self-distillation does not generalize from code to instruction-following.** The
+6. **Self-distillation does not generalize from code to instruction-following.** The
    precision-exploration conflict that makes SSD work on code does not exist in diverse
    instruction-following tasks.
 
-5. **Steering an already-tuned model has diminishing returns.** The delta from a smaller
-   pair adds almost nothing (+0.4pp) to an already instruction-tuned model.
+7. **Always verify numerical operations in MLX.** The `at[].add()` bug went undetected
+   through multiple experiments and led to incorrect conclusions about GRAFT's failure
+   on instruct models. The qualitative analysis (looking at actual outputs) is what
+   caught it.
