@@ -187,3 +187,34 @@ experiment. The 14B-GRAFT results (59.7%) used a different code path and were no
    through multiple experiments and led to incorrect conclusions about GRAFT's failure
    on instruct models. The qualitative analysis (looking at actual outputs) is what
    caught it.
+
+---
+
+## Experiment 8: Overnight Exploration (7 ideas, 10 prompts each)
+
+Tested diverse cheap logit-level approaches. Two findings stood out:
+
+**max_tokens=512 gives +10pp on 4B-instruct** (70% vs 60% at 256 tokens). Many IFEval
+prompts require long responses (300+ words, multiple paragraphs). Our 256-token limit
+was artificially capping performance. This is the single biggest improvement found in
+the entire project — and it's just a config change.
+
+**Entropy-adaptive proxy works on 14B-base** (tau=1.0 matches full proxy at 60%, both
+double the base at 30%). With the GRAFT scoring bug fixed, the adaptive approach works
+correctly on base models: apply proxy delta when the model is uncertain (entropy > tau),
+greedy when confident. At tau=1.0, it matches full proxy while using the delta on only
+a subset of tokens.
+
+**Best-of-5 sampling doesn't help** — neither self-certainty scoring nor proxy reranking
+improved over greedy on any model (4B-instruct, 14B-base, 0.6B). The greedy path is
+already near-optimal for instruction-following; sampling introduces noise without
+finding better solutions.
+
+| Experiment | Result | vs Baseline |
+|-----------|--------|------------|
+| 4B best-of-5 self-certainty | 6/10 (60%) | = baseline |
+| 14B-base best-of-5 | 2/10 (20%) | worse than 3/10 |
+| 14B-base entropy-adaptive tau=1 | 6/10 (60%) | = proxy (both +30pp) |
+| 14B-base bon5 + proxy rerank | 3/10 (30%) | = baseline |
+| **4B max_tokens=512** | **7/10 (70%)** | **+10pp** |
+| 0.6B bon5 + 4B proxy rerank | 5/10 (50%) | = baseline |

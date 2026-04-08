@@ -1,0 +1,42 @@
+{
+  "exp1_4b_bon": {
+    "greedy": [
+      6,
+      13,
+      18
+    ],
+    "bon5": [
+      6,
+      13,
+      18
+    ]
+  },
+  "exp2_14b_base_bon": {
+    "greedy": [
+      3,
+      7,
+      18
+    ],
+    "bon5": [
+      2,
+      8,
+      18
+    ]
+  },
+  "exp3_entropy_adaptive_14b": "see output",
+  "exp4_reranking": "see output",
+  "exp5_lookahead": "infeasible: MLX cache rollback not supported",
+  "exp6_max_tokens": {
+    "256": [
+      6,
+      13,
+      18
+    ],
+    "512": [
+      7,
+      15,
+      18
+    ]
+  },
+  "exp7_06b_reranking": "see output"
+}
