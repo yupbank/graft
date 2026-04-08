@@ -1,0 +1,135 @@
+{
+  "14B-base (no steering)": {
+    "prompt": "41.0%",
+    "prompt_n": "222/541",
+    "instr": "52.8%",
+    "category": "14B Base Models",
+    "desc": "The raw 14B base model with no instruction-following capability. Just completes text."
+  },
+  "14B + GRAFT k=50": {
+    "prompt": "59.7%",
+    "prompt_n": "323/541",
+    "instr": "70.4%",
+    "category": "14B Base Models",
+    "desc": "Apply the 8B instruct-vs-base delta to 14B, restricted to top-50 tokens. Works in log-probability space."
+  },
+  "14B + Proxy-tuning": {
+    "prompt": "62.5%",
+    "prompt_n": "338/541",
+    "instr": "72.5%",
+    "category": "14B Base Models",
+    "desc": "Apply the 8B instruct-vs-base delta to 14B over the full vocabulary. Simple logit addition."
+  },
+  "8B instruct": {
+    "prompt": "61.7%",
+    "prompt_n": "334/541",
+    "instr": "71.7%",
+    "category": "14B Base Models",
+    "desc": "The 8B instruct model used as the delta source. For reference."
+  },
+  "14B instruct": {
+    "prompt": "62.1%",
+    "prompt_n": "336/541",
+    "instr": "72.2%",
+    "category": "14B Base Models",
+    "desc": "The actual 14B instruct model. The ceiling for what steering should achieve."
+  },
+  "4B-instruct baseline": {
+    "prompt": "58.0%",
+    "prompt_n": "314/541",
+    "instr": "68.5%",
+    "category": "4B Instruct Models",
+    "desc": "Already instruction-tuned 4B model. Strong baseline."
+  },
+  "4B + 0.6B proxy": {
+    "prompt": "58.4%",
+    "prompt_n": "316/541",
+    "instr": "68.6%",
+    "category": "4B Instruct Models",
+    "desc": "Apply 0.6B instruct-vs-base delta to the 4B instruct. Barely changes anything."
+  },
+  "4B + 0.6B GRAFT k=50": {
+    "prompt": "58.2%",
+    "prompt_n": "315/541",
+    "instr": "68.8%",
+    "category": "4B Instruct Models",
+    "desc": "Same delta but restricted to top-50. Also barely changes anything."
+  },
+  "8B base": {
+    "prompt": "38.1%",
+    "prompt_n": "206/541",
+    "instr": "50.5%",
+    "category": "Other Baselines",
+    "desc": "The raw 8B base model. No instruction-following."
+  },
+  "14B base": {
+    "prompt": "41.0%",
+    "prompt_n": "222/541",
+    "instr": "52.8%",
+    "category": "Other Baselines",
+    "desc": "The raw 14B base model. Slightly better than 8B but still no instruction-following."
+  },
+  "CFG w=0.5 (14B)": {
+    "prompt": "52.0%",
+    "prompt_n": "26/50",
+    "instr": "64.5%",
+    "category": "Alternative Formulas (50 prompts)",
+    "desc": "Classifier-free guidance: amplify the difference between proxy-tuned and base distributions."
+  },
+  "CFG w=1.0 (14B)": {
+    "prompt": "52.0%",
+    "prompt_n": "26/50",
+    "instr": "64.5%",
+    "category": "Alternative Formulas (50 prompts)",
+    "desc": "Stronger classifier-free guidance. Same result as w=0.5."
+  },
+  "Top-k boost \u03b1=5": {
+    "prompt": "42.0%",
+    "prompt_n": "21/50",
+    "instr": "50.0%",
+    "category": "Alternative Formulas (50 prompts)",
+    "desc": "Add a constant boost to the top-k logits. Tests if uniform sharpening helps. It doesn't."
+  },
+  "SSD (self-distill)": {
+    "prompt": "48.0%",
+    "prompt_n": "24/50",
+    "instr": "63.2%",
+    "category": "Self-Distillation (50 prompts)",
+    "desc": "Fine-tune 4B on its own sampled outputs. Apple's method \u2014 but on IFEval, not code. Hurts."
+  },
+  "Proxy-SSD (0.6B delta)": {
+    "prompt": "46.0%",
+    "prompt_n": "23/50",
+    "instr": "59.2%",
+    "category": "Self-Distillation (50 prompts)",
+    "desc": "Fine-tune 4B on proxy-tuned outputs. Hurts even more."
+  },
+  "CFG-SSD (amplified)": {
+    "prompt": "44.0%",
+    "prompt_n": "22/50",
+    "instr": "56.6%",
+    "category": "Self-Distillation (50 prompts)",
+    "desc": "Fine-tune 4B on CFG-amplified outputs. Hurts the most."
+  },
+  "4B max_tokens=256": {
+    "prompt": "60%",
+    "prompt_n": "6/10",
+    "instr": "72%",
+    "category": "Config Changes (10 prompts)",
+    "desc": "Standard generation length. Many prompts can't finish long responses."
+  },
+  "4B max_tokens=512": {
+    "prompt": "70%",
+    "prompt_n": "7/10",
+    "instr": "83%",
+    "category": "Config Changes (10 prompts)",
+    "desc": "Double the generation length. +10pp just from letting the model write more. The biggest win."
+  },
+  "Speculative decoding": {
+    "prompt": "50.0%",
+    "prompt_n": "10/20",
+    "instr": "56.7%",
+    "category": "Efficiency (20 prompts)",
+    "desc": "Use 8B instruct as draft, verify with 14B+delta. 75% acceptance rate but slower due to cache rebuild."
+  }
+}

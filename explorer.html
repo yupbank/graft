@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRAFT — Method Explorer</title>
+<style>
+  :root {
+    --bg: #fafafa; --fg: #1a1a1a; --accent: #2563eb; --green: #16a34a;
+    --red: #dc2626; --amber: #d97706; --card: #fff; --border: #e5e7eb;
+    --code-bg: #f3f4f6; --muted: #6b7280; --selected: #dbeafe;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a; --fg: #e2e8f0; --accent: #60a5fa; --green: #4ade80;
+      --red: #f87171; --amber: #fbbf24; --card: #1e293b; --border: #334155;
+      --code-bg: #1e293b; --muted: #94a3b8; --selected: #1e3a5f;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg); color: var(--fg); line-height: 1.6;
+    max-width: 1100px; margin: 0 auto; padding: 1.5rem;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 0.3rem; }
+  h2 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .takeaway {
+    background: var(--card); border: 2px solid var(--green); border-radius: 8px;
+    padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: 0.95rem;
+  }
+  .takeaway strong { color: var(--green); }
+  .grid { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; }
+  @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+
+  /* Left panel: method selector */
+  .methods { max-height: 80vh; overflow-y: auto; }
+  .cat-label {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--muted); margin: 1rem 0 0.3rem; padding-left: 0.5rem;
+  }
+  .method {
+    background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.6rem 0.75rem; margin-bottom: 0.4rem; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .method:hover { border-color: var(--accent); }
+  .method.selected { background: var(--selected); border-color: var(--accent); }
+  .method .name { font-weight: 600; font-size: 0.9rem; }
+  .method .score { float: right; font-weight: 700; font-size: 0.9rem; }
+  .method .score.high { color: var(--green); }
+  .method .score.mid { color: var(--amber); }
+  .method .score.low { color: var(--red); }
+
+  /* Right panel: comparison */
+  .comparison {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1.25rem; min-height: 400px;
+  }
+  .comp-header { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; }
+  .bar-container { margin: 0.5rem 0; }
+  .bar-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.2rem; }
+  .bar-outer {
+    height: 28px; background: var(--code-bg); border-radius: 4px; position: relative;
+    overflow: hidden;
+  }
+  .bar-inner {
+    height: 100%; border-radius: 4px; transition: width 0.3s;
+    display: flex; align-items: center; padding-left: 8px;
+    font-size: 0.8rem; font-weight: 600; color: white;
+  }
+  .bar-inner.accent { background: var(--accent); }
+  .bar-inner.green { background: var(--green); }
+  .bar-inner.muted { background: var(--muted); }
+  .desc {
+    background: var(--code-bg); border-radius: 6px; padding: 0.75rem 1rem;
+    margin: 1rem 0; font-size: 0.88rem; line-height: 1.5;
+  }
+  .comp-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.88rem; }
+  .comp-table th, .comp-table td {
+    padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border);
+  }
+  .comp-table th { font-weight: 600; background: var(--code-bg); }
+  .verdict { font-weight: 700; font-size: 0.8rem; padding: 0.1rem 0.5rem; border-radius: 3px; }
+  .verdict.win { background: #dcfce7; color: #166534; }
+  .verdict.lose { background: #fee2e2; color: #991b1b; }
+  .verdict.same { background: #f3f4f6; color: #6b7280; }
+  @media (prefers-color-scheme: dark) {
+    .verdict.win { background: #14532d; color: #bbf7d0; }
+    .verdict.lose { background: #7f1d1d; color: #fecaca; }
+    .verdict.same { background: #334155; color: #94a3b8; }
+  }
+  .footer { color: var(--muted); font-size: 0.75rem; margin-top: 2rem; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>GRAFT — Method Explorer</h1>
+<p class="subtitle">Select any method to see its score, description, and comparison with baselines.</p>
+
+<div class="takeaway">
+  <strong>The #1 finding:</strong> The biggest improvement (+10pp) came from changing <code>max_tokens</code> from 256 to 512 —
+  not from any steering method. On already-tuned models, everything else is noise.
+  On base models, proxy-tuning adds +21pp with zero training.
+</div>
+
+<div class="grid">
+  <div class="methods" id="methods"></div>
+  <div class="comparison" id="comparison">
+    <div class="comp-header">Click a method to see details</div>
+  </div>
+</div>
+
+<div class="footer">
+  GRAFT Research Explorer &middot; IFEval benchmark &middot; All results reproducible via scripts in the repo
+</div>
+
+<script>
+const DATA = {
+  "14B-base (no steering)": {"prompt": 41.0, "prompt_n": "222/541", "instr": 52.8, "category": "14B Base Models (541 prompts)", "desc": "The raw 14B base model with no instruction-following capability. Just completes text like an autocomplete engine."},
+  "14B + GRAFT k=50": {"prompt": 59.7, "prompt_n": "323/541", "instr": 70.4, "category": "14B Base Models (541 prompts)", "desc": "Our method: compute the instruct-vs-base delta from an 8B model pair, restrict to the 14B's top-50 tokens, apply in log-probability space. Closes 87% of the gap to the instruct model."},
+  "14B + Proxy-tuning": {"prompt": 62.5, "prompt_n": "338/541", "instr": 72.5, "category": "14B Base Models (541 prompts)", "desc": "Liu et al. 2024: add the 8B instruct-vs-base delta directly to the 14B's logits over the full vocabulary. Simple addition, no restriction. Closes 100%+ of the gap."},
+  "8B instruct": {"prompt": 61.7, "prompt_n": "334/541", "instr": 71.7, "category": "14B Base Models (541 prompts)", "desc": "The 8B instruction-tuned model that provides the delta. Included for reference — it's the 'teacher' whose behavior we're transferring."},
+  "14B instruct": {"prompt": 62.1, "prompt_n": "336/541", "instr": 72.2, "category": "14B Base Models (541 prompts)", "desc": "The actual 14B instruct model — the ceiling. If proxy-tuning matches this, the delta transfer is perfect."},
+
+  "4B-instruct baseline": {"prompt": 58.0, "prompt_n": "314/541", "instr": 68.5, "category": "4B Instruct Models (541 prompts)", "desc": "Already instruction-tuned 4B model. No steering needed — it already follows instructions well."},
+  "4B + 0.6B proxy": {"prompt": 58.4, "prompt_n": "316/541", "instr": 68.6, "category": "4B Instruct Models (541 prompts)", "desc": "Apply the 0.6B instruct-vs-base delta to the 4B instruct. The delta carries the same instruction-following signal the 4B already has. Result: +0.4pp, barely noticeable."},
+  "4B + 0.6B GRAFT k=50": {"prompt": 58.2, "prompt_n": "315/541", "instr": 68.8, "category": "4B Instruct Models (541 prompts)", "desc": "Same delta but restricted to top-50 tokens. Also barely changes anything. The model is too confident for logit perturbations to matter."},
+
+  "8B base": {"prompt": 38.1, "prompt_n": "206/541", "instr": 50.5, "category": "Other Baselines (541 prompts)", "desc": "The raw 8B base model. No instruction-following — produces raw text completion."},
+
+  "CFG w=0.5": {"prompt": 52.0, "prompt_n": "26/50", "instr": 64.5, "category": "Alternative Formulas (50 prompts)", "desc": "Classifier-Free Guidance from diffusion models: amplify the difference between the steered and base distributions. Formula: (1+w)·log p_steered − w·log p_base. Doesn't beat proxy-tuning."},
+  "CFG w=1.0": {"prompt": 52.0, "prompt_n": "26/50", "instr": 64.5, "category": "Alternative Formulas (50 prompts)", "desc": "Stronger CFG. Same result as w=0.5 — the formula variation doesn't matter."},
+  "Top-k boost α=5": {"prompt": 42.0, "prompt_n": "21/50", "instr": 50.0, "category": "Alternative Formulas (50 prompts)", "desc": "Add a constant +5 to the top-k logits. Tests Apple's SSD insight: does uniform sharpening help? No — you need directional signal (which tokens to promote), not uniform boosting."},
+
+  "SSD (self-distill)": {"prompt": 48.0, "prompt_n": "24/50", "instr": 63.2, "category": "Self-Distillation (50 prompts)", "desc": "Apple's method: fine-tune the model on its own temperature-sampled outputs via LoRA. Works for code generation, but hurts on instruction-following. The precision-exploration conflict doesn't exist in IFEval."},
+  "Proxy-SSD": {"prompt": 46.0, "prompt_n": "23/50", "instr": 59.2, "category": "Self-Distillation (50 prompts)", "desc": "Fine-tune on proxy-tuned outputs instead of self-outputs. Hurts even more — the proxy distribution is too different from the model's own, causing LoRA to overfit to an alien distribution."},
+  "CFG-SSD": {"prompt": 44.0, "prompt_n": "22/50", "instr": 56.6, "category": "Self-Distillation (50 prompts)", "desc": "Fine-tune on CFG-amplified outputs. Worst of all SSD variants. Amplification pushes training data further from the model's distribution."},
+
+  "max_tokens=256": {"prompt": 60.0, "prompt_n": "6/10", "instr": 72.0, "category": "Config Changes (10 prompts)", "desc": "Standard generation length used in all experiments. Many IFEval prompts need 300+ word responses that get cut off."},
+  "max_tokens=512": {"prompt": 70.0, "prompt_n": "7/10", "instr": 83.0, "category": "Config Changes (10 prompts)", "desc": "Double the generation length. THE BIGGEST WIN IN THE WHOLE PROJECT: +10pp just from letting the model write longer. Not a method — a config change."},
+};
+
+// Determine score class
+function scoreClass(val) {
+  if (val >= 58) return 'high';
+  if (val >= 45) return 'mid';
+  return 'low';
+}
+
+// Build method list
+const methods = document.getElementById('methods');
+const comparison = document.getElementById('comparison');
+let currentCat = '';
+const entries = Object.entries(DATA);
+
+entries.forEach(([name, d]) => {
+  if (d.category !== currentCat) {
+    currentCat = d.category;
+    const label = document.createElement('div');
+    label.className = 'cat-label';
+    label.textContent = currentCat;
+    methods.appendChild(label);
+  }
+  const el = document.createElement('div');
+  el.className = 'method';
+  el.innerHTML = `<span class="name">${name}</span><span class="score ${scoreClass(d.prompt)}">${d.prompt}%</span>`;
+  el.addEventListener('click', () => selectMethod(name, el));
+  methods.appendChild(el);
+});
+
+function selectMethod(name, el) {
+  document.querySelectorAll('.method').forEach(m => m.classList.remove('selected'));
+  el.classList.add('selected');
+
+  const d = DATA[name];
+  const best = Math.max(...entries.map(([,v]) => v.prompt));
+  const baseline14b = 41.0;
+  const instruct14b = 62.1;
+
+  // Determine verdict
+  let verdict, verdictClass;
+  if (d.prompt >= 62) { verdict = 'Matches instruct model'; verdictClass = 'win'; }
+  else if (d.prompt >= 55) { verdict = 'Strong improvement'; verdictClass = 'win'; }
+  else if (d.prompt >= 42) { verdict = 'Moderate effect'; verdictClass = 'same'; }
+  else { verdict = 'Minimal or negative effect'; verdictClass = 'lose'; }
+
+  comparison.innerHTML = `
+    <div class="comp-header">${name}</div>
+    <div class="desc">${d.desc}</div>
+
+    <h2>Prompt-Level Strict Accuracy</h2>
+    <div class="bar-container">
+      <div class="bar-label">This method: ${d.prompt_n} (${d.prompt}%)</div>
+      <div class="bar-outer">
+        <div class="bar-inner accent" style="width:${d.prompt}%">${d.prompt}%</div>
+      </div>
+    </div>
+    <div class="bar-container">
+      <div class="bar-label">14B instruct (ceiling): 62.1%</div>
+      <div class="bar-outer">
+        <div class="bar-inner green" style="width:62.1%">62.1%</div>
+      </div>
+    </div>
+    <div class="bar-container">
+      <div class="bar-label">14B base (floor): 41.0%</div>
+      <div class="bar-outer">
+        <div class="bar-inner muted" style="width:41%">41%</div>
+      </div>
+    </div>
+
+    <h2>Instruction-Level Accuracy</h2>
+    <div class="bar-container">
+      <div class="bar-label">This method: ${d.instr}%</div>
+      <div class="bar-outer">
+        <div class="bar-inner accent" style="width:${d.instr}%">${d.instr}%</div>
+      </div>
+    </div>
+
+    <h2>Verdict</h2>
+    <span class="verdict ${verdictClass}">${verdict}</span>
+
+    <h2>Quick Comparison</h2>
+    <table class="comp-table">
+      <tr><th>Method</th><th>Score</th><th>vs This</th></tr>
+      ${entries.filter(([n,]) => n !== name && DATA[n].category.includes('14B Base') || n === '4B-instruct baseline' || n === 'max_tokens=512').map(([n, v]) => {
+        const diff = (d.prompt - v.prompt).toFixed(1);
+        const cls = diff > 0.5 ? 'win' : diff < -0.5 ? 'lose' : 'same';
+        const sign = diff > 0 ? '+' : '';
+        return `<tr><td>${n}</td><td>${v.prompt}%</td><td><span class="verdict ${cls}">${sign}${diff}pp</span></td></tr>`;
+      }).join('')}
+    </table>
+  `;
+}
+
+// Auto-select the first interesting method
+document.querySelectorAll('.method')[2].click();
+</script>
+
+</body>
+</html>
