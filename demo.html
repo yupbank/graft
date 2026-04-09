@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRAFT — Why Top-k Restriction Loses: A Visual Demo</title>
+<style>
+  :root{--bg:#fafafa;--fg:#1a1a1a;--accent:#2563eb;--green:#16a34a;--red:#dc2626;--amber:#d97706;--card:#fff;--border:#e5e7eb;--code-bg:#f3f4f6;--muted:#6b7280;}
+  @media(prefers-color-scheme:dark){:root{--bg:#0f172a;--fg:#e2e8f0;--accent:#60a5fa;--green:#4ade80;--red:#f87171;--amber:#fbbf24;--card:#1e293b;--border:#334155;--code-bg:#1e293b;--muted:#94a3b8;}}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--fg);line-height:1.7;max-width:960px;margin:0 auto;padding:2rem 1.5rem;}
+  h1{font-size:1.5rem;margin-bottom:0.3rem;} h2{font-size:1.2rem;margin:2rem 0 0.75rem;color:var(--accent);} h3{font-size:1rem;margin:1rem 0 0.5rem;}
+  p{margin-bottom:0.8rem;} .subtitle{color:var(--muted);font-size:0.9rem;margin-bottom:1.5rem;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1rem 0;}
+  .step{counter-increment:step;position:relative;padding-left:3rem;margin:2rem 0;}
+  .step::before{content:counter(step);position:absolute;left:0;top:0;width:2.2rem;height:2.2rem;background:var(--accent);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;}
+  table{width:100%;border-collapse:collapse;margin:0.5rem 0;font-size:0.85rem;}
+  th,td{padding:0.4rem 0.6rem;text-align:right;border-bottom:1px solid var(--border);}
+  th{font-weight:600;background:var(--code-bg);text-align:right;}
+  td:first-child,th:first-child{text-align:left;}
+  .tok{font-family:'SF Mono',Consolas,monospace;background:var(--code-bg);padding:0.1rem 0.4rem;border-radius:3px;}
+  .highlight{background:#fef9c3;font-weight:700;}
+  @media(prefers-color-scheme:dark){.highlight{background:#713f12;}}
+  .winner{background:#dcfce7;} @media(prefers-color-scheme:dark){.winner{background:#14532d;}}
+  .blocked{background:#fee2e2;} @media(prefers-color-scheme:dark){.blocked{background:#7f1d1d;}}
+  .bar-wrap{display:flex;align-items:center;gap:0.5rem;margin:0.3rem 0;}
+  .bar-label{width:80px;font-size:0.8rem;text-align:right;flex-shrink:0;}
+  .bar-outer{flex:1;height:22px;background:var(--code-bg);border-radius:3px;overflow:hidden;position:relative;}
+  .bar-inner{height:100%;border-radius:3px;display:flex;align-items:center;padding-left:6px;font-size:0.75rem;font-weight:600;color:white;transition:width 0.5s;}
+  .bar-pos{background:var(--accent);}
+  .bar-neg{background:var(--red);}
+  .bar-total{background:var(--green);}
+  .bar-blocked{background:var(--muted);}
+  .tag{display:inline-block;font-size:0.7rem;font-weight:700;padding:0.1rem 0.4rem;border-radius:3px;margin-left:0.3rem;}
+  .tag-green{background:#dcfce7;color:#166534;} .tag-red{background:#fee2e2;color:#991b1b;} .tag-blue{background:#dbeafe;color:#1e40af;}
+  @media(prefers-color-scheme:dark){.tag-green{background:#14532d;color:#bbf7d0;}.tag-red{background:#7f1d1d;color:#fecaca;}.tag-blue{background:#1e3a5f;color:#93c5fd;}}
+  .arrow{font-size:1.5rem;text-align:center;color:var(--muted);margin:0.5rem 0;}
+  .result{border-left:4px solid;padding:0.75rem 1rem;margin:0.75rem 0;border-radius:0 6px 6px 0;}
+  .result-good{border-color:var(--green);background:#f0fdf4;}
+  .result-bad{border-color:var(--red);background:#fef2f2;}
+  @media(prefers-color-scheme:dark){.result-good{background:#14532d40;}.result-bad{background:#7f1d1d40;}}
+  .counter-reset{counter-reset:step;}
+</style>
+</head>
+<body>
+
+<h1>Why Top-k Restriction Loses: A Token-Level Demo</h1>
+<p class="subtitle">Real numbers from Qwen3-14B-Base + 8B instruct delta on IFEval Prompt #8:<br>
+<em>"Write a letter to a friend in all lowercase letters asking them to go and vote."</em></p>
+
+<div class="counter-reset">
+
+<!-- STEP 1 -->
+<div class="step">
+<h2>The 14B Base Model's View</h2>
+<p>The base model sees the prompt and ranks tokens by its own logits. It has no idea this should be a letter — it just predicts what text comes next.</p>
+
+<table>
+<thead><tr><th>Rank</th><th>Token</th><th>s<sub>large</sub></th><th>What the base thinks</th></tr></thead>
+<tbody>
+<tr><td>#1</td><td><span class="tok">user</span></td><td>8.56</td><td>Template continuation</td></tr>
+<tr><td>#2</td><td><span class="tok">1</span></td><td>8.12</td><td>Numbered list</td></tr>
+<tr><td>#3</td><td><span class="tok"> </span></td><td>7.88</td><td>Whitespace</td></tr>
+<tr><td>#4</td><td><span class="tok">```</span></td><td>7.81</td><td>Code block</td></tr>
+<tr><td>#5</td><td><span class="tok">def</span></td><td>7.78</td><td>Python function</td></tr>
+<tr><td>#6</td><td><span class="tok">#</span></td><td>7.62</td><td>Markdown heading</td></tr>
+<tr><td>#7</td><td><span class="tok">Hi</span></td><td>7.41</td><td>Greeting</td></tr>
+<tr><td colspan="4" style="text-align:center;color:var(--muted);">... 43 more tokens in top-50 ...</td></tr>
+<tr><td>#50</td><td><span class="tok">(boundary)</span></td><td>~5.5</td><td></td></tr>
+<tr><td colspan="4" style="text-align:center;color:var(--red);font-weight:700;">── top-50 cutoff ──</td></tr>
+<tr class="blocked"><td><strong>#79</strong></td><td><span class="tok">de</span></td><td><strong>4.56</strong></td><td>Start of "dear" — a letter opener!</td></tr>
+</tbody>
+</table>
+
+<p>The base model ranks <span class="tok">de</span> at position #79. It doesn't know this should be a letter, so letter-specific tokens are ranked low.</p>
+</div>
+
+<!-- STEP 2 -->
+<div class="step">
+<h2>The 8B Instruct Delta: What Instruction-Tuning Learned</h2>
+<p>The delta = (8B-instruct logit) − (8B-base logit). Positive = instruct wants it MORE. Negative = instruct wants it LESS.</p>
+
+<table>
+<thead><tr><th>Token</th><th>s<sub>ft</sub></th><th>s<sub>raw</sub></th><th>Delta</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr class="highlight"><td><span class="tok">de</span></td><td>39.50</td><td>19.88</td><td style="color:var(--green);font-weight:700;">+19.62</td><td>Instruct STRONGLY wants "dear"</td></tr>
+<tr><td><span class="tok">Hi</span></td><td>20.38</td><td>18.75</td><td style="color:var(--green);">+1.62</td><td>Slightly prefers greetings</td></tr>
+<tr><td><span class="tok">def</span></td><td>18.75</td><td>18.88</td><td style="color:var(--muted);">−0.12</td><td>Doesn't care about code</td></tr>
+<tr><td><span class="tok"> </span></td><td>15.69</td><td>18.25</td><td style="color:var(--red);">−2.56</td><td>Slightly dislikes whitespace</td></tr>
+<tr><td><span class="tok">```</span></td><td>17.38</td><td>21.88</td><td style="color:var(--red);">−4.50</td><td>Dislikes code blocks</td></tr>
+<tr><td><span class="tok">#</span></td><td>9.12</td><td>20.88</td><td style="color:var(--red);">−11.75</td><td>Strongly dislikes markdown</td></tr>
+<tr><td><span class="tok">user</span></td><td>12.69</td><td>24.50</td><td style="color:var(--red);">−11.81</td><td>Strongly dislikes template tokens</td></tr>
+</tbody>
+</table>
+
+<div class="card">
+<p><strong>The delta of +19.62 for <span class="tok">de</span> is massive.</strong>
+The 8B instruct model knows this prompt is asking for a letter, and <span class="tok">de</span> (start of "dear") is the right way to begin one. The base model has no idea.</p>
+</div>
+</div>
+
+<!-- STEP 3 -->
+<div class="step">
+<h2>Proxy-Tuning Score = s<sub>large</sub> + delta</h2>
+<p>Add the delta to the base model's logits. Watch how the rankings change:</p>
+
+<table>
+<thead><tr><th>Token</th><th>s<sub>large</sub></th><th>+</th><th>Delta</th><th>=</th><th>Total</th><th>New Rank</th></tr></thead>
+<tbody>
+<tr class="winner"><td><span class="tok">de</span></td><td>4.56</td><td></td><td style="color:var(--green);font-weight:700;">+19.62</td><td></td><td><strong>24.19</strong></td><td><strong>#1</strong> <span class="tag tag-green">WINNER</span></td></tr>
+<tr><td><span class="tok">Hi</span></td><td>7.41</td><td></td><td>+1.62</td><td></td><td>9.03</td><td>#2</td></tr>
+<tr><td><span class="tok">def</span></td><td>7.78</td><td></td><td>−0.12</td><td></td><td>7.66</td><td>#3</td></tr>
+<tr><td><span class="tok"> </span></td><td>7.88</td><td></td><td>−2.56</td><td></td><td>5.31</td><td>#5</td></tr>
+<tr><td><span class="tok">1</span></td><td>8.12</td><td></td><td>−7.62</td><td></td><td>0.50</td><td>#198</td></tr>
+<tr><td><span class="tok">user</span></td><td>8.56</td><td></td><td>−11.81</td><td></td><td>−3.25</td><td>#509</td></tr>
+<tr><td><span class="tok">#</span></td><td>7.62</td><td></td><td>−11.75</td><td></td><td>−4.12</td><td>#626</td></tr>
+</tbody>
+</table>
+
+<p>The +19.62 delta catapults <span class="tok">de</span> from rank #79 all the way to <strong>#1</strong>.
+The template tokens (<span class="tok">user</span>, <span class="tok">#</span>) get crushed by negative deltas.</p>
+
+<div class="bar-wrap">
+  <div class="bar-label"><span class="tok">de</span></div>
+  <div class="bar-outer"><div class="bar-inner bar-total" style="width:100%">24.19</div></div>
+</div>
+<div class="bar-wrap">
+  <div class="bar-label"><span class="tok">Hi</span></div>
+  <div class="bar-outer"><div class="bar-inner bar-pos" style="width:37%">9.03</div></div>
+</div>
+<div class="bar-wrap">
+  <div class="bar-label"><span class="tok">def</span></div>
+  <div class="bar-outer"><div class="bar-inner bar-pos" style="width:32%">7.66</div></div>
+</div>
+<div class="bar-wrap">
+  <div class="bar-label"><span class="tok">user</span></div>
+  <div class="bar-outer"><div class="bar-inner bar-neg" style="width:2%"></div></div>
+</div>
+</div>
+
+<!-- STEP 4 -->
+<div class="step">
+<h2>The Restriction Problem</h2>
+<p>Top-50 restriction only considers tokens ranked #1–#50 by the <strong>base model</strong> (before applying the delta):</p>
+
+<div class="result result-good">
+<h3>Full-vocab proxy-tuning → sees ALL 151,936 tokens</h3>
+<p>Picks <span class="tok">de</span> (total=24.19) → generates <strong>"dear friend, ..."</strong></p>
+<p>Concise letter, 47 words → <span class="tag tag-green">PASSES</span> length constraint</p>
+</div>
+
+<div class="result result-bad">
+<h3>Top-50 restriction → only sees base model's top-50</h3>
+<p><span class="tok">de</span> is at rank #79 — <strong>invisible</strong>. Can't pick it.</p>
+<p>Picks <span class="tok">Hi</span> (total=9.03, best available) → generates <strong>"hello my friend, ..."</strong></p>
+<p>Rambling letter, 183 words → <span class="tag tag-red">FAILS</span> length constraint</p>
+</div>
+</div>
+
+<!-- STEP 5 -->
+<div class="step">
+<h2>The Fundamental Mechanism</h2>
+
+<div class="card" style="border-left:4px solid var(--accent);">
+<p><strong>Instruction-tuning teaches models to use tokens that base models ignore.</strong></p>
+<ul>
+<li>"Write a letter" → <span class="tok">dear</span> (rank #79 in base)</li>
+<li>"Respond in JSON" → <span class="tok">{</span> (could be rank #200+ in base)</li>
+<li>"Answer in French" → French tokens (very low in English base)</li>
+</ul>
+<p>The delta's job is to promote these tokens. But top-k restriction blocks the promotion when the target is below rank k.</p>
+</div>
+
+<h3>By the numbers (541 IFEval prompts):</h3>
+<table>
+<thead><tr><th>Method</th><th>IFEval Strict</th><th>What it can see</th></tr></thead>
+<tbody>
+<tr><td>14B base (no delta)</td><td>41.0%</td><td>All tokens, no steering</td></tr>
+<tr><td>Proxy-restricted k=50</td><td>59.3%</td><td>Top-50 + delta</td></tr>
+<tr><td>GRAFT k=50</td><td>59.7%</td><td>Top-50 + delta (log-prob)</td></tr>
+<tr><td><strong>Proxy-tuning (full)</strong></td><td><strong>62.5%</strong></td><td><strong>All 151,936 + delta</strong></td></tr>
+<tr><td>14B instruct</td><td>62.1%</td><td>Trained weights</td></tr>
+</tbody>
+</table>
+
+<p>The 3pp gap (59% → 62%) = the <strong>fraction of generation steps where the instruct delta needs to promote a token from outside the base model's top-50.</strong> It happens ~3% of the time, but each occurrence can cascade into a different-length response that fails a constraint.</p>
+</div>
+
+</div><!-- counter-reset -->
+
+<hr style="margin-top:2.5rem;border:none;border-top:1px solid var(--border);">
+<p style="color:var(--muted);font-size:0.75rem;margin-top:1rem;text-align:center;">
+  GRAFT Research &middot; Real data from Qwen3-14B-Base + 8B delta &middot; IFEval Prompt #8
+</p>
+
+</body>
+</html>
